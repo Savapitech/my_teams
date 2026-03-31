@@ -1,0 +1,337 @@
+Request for Comments: 139
+Category: Informational
+Title: MyTeams Protocol (MTP)
+Author: BAD team
+Date: March 2026
+
+
+Abstract
+
+   This document specifies the MyTeams Protocol (MTP), an application-
+   layer protocol designed for a collaborative communication system.
+   MTP operates over TCP and enables interaction between a command-line
+   client and a server managing users, teams, channels, threads, and
+   messages.
+
+   This document defines message formats, commands, responses, error
+   handling, and operational constraints.
+
+
+Status of This Memo
+
+   This memo provides information for the Internet community. It does
+   not specify an Internet standard of any kind. Distribution of this
+   memo is unlimited.
+
+
+1. Introduction
+
+   The MyTeams Protocol (MTP) is a text-based protocol enabling
+   communication between clients and a centralized server for
+   collaborative messaging.
+
+   The protocol supports:
+     - User management
+     - Team subscription and management
+     - Hierarchical content organization
+     - Private messaging
+     - Event notifications
+
+   MTP is designed to be simple, human-readable, and suitable for CLI
+   environments.
+
+
+2. Conventions and Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", and "MAY" in this document are to be
+   interpreted as described in RFC 2119.
+
+   An implementation is not compliant if it fails to satisfy one or more
+   of the MUST or REQUIRED level requirements for the protocols it
+   implements. An implementation that satisfies all the MUST or REQUIRED
+   level and all the SHOULD level requirements for its protocols is said
+   to be "unconditionally compliant"; one that satisfies all the MUST
+   level requirements but not all the SHOULD level requirements for its
+   protocols is said to be "conditionally compliant."
+
+   Client: The CLI/Web application.
+   Server: The central service managing state and communication.
+
+
+3. Transport
+
+   MTP operates over TCP.
+
+   The server listens on a specified port and accepts multiple clients.
+   The default MTP port is 5290.
+   Communication is bidirectional and persistent.
+
+
+4. Message Format
+
+4.1 General Structure
+
+   All messages are UTF-8 encoded and terminated by a newline character
+   (LF, '\n').
+
+   Request format:
+
+     COMMAND ARG1 ARG2 ... ARGN
+
+   Response format:
+
+     STATUS_CODE MESSAGE
+     [DATA]
+
+4.2 Arguments
+
+   Arguments MUST be enclosed in double quotes (").
+
+   Example:
+
+     LOGIN "john_doe"
+     SEND "uuid" "Hello world"
+
+   If quotes are missing or malformed, the server MUST respond with
+   a 400 status code.
+
+
+5. Status Codes
+
+   The following status codes are defined:
+
+     200 OK
+        The request has succeeded.
+
+     201 CREATED
+        A resource has been successfully created.
+
+     202 ACCEPTED
+        The request has been accepted for processing.
+
+     400 BAD_REQUEST
+        The request is malformed or invalid.
+
+     401 UNAUTHORIZED
+        Authentication is required or has failed.
+
+     403 FORBIDDEN
+        The client does not have permission.
+
+     404 NOT_FOUND
+        The requested resource does not exist.
+
+     409 CONFLICT
+        The request conflicts with the current state.
+
+     413 PAYLOAD_TOO_LARGE
+        The request exceeds allowed size limits.
+
+     418 IM_A_TEAPOT
+        This server is a teapot and cannot make coffee :)
+
+     500 INTERNAL_ERROR
+        A generic server-side error occurred.
+
+     502 BAD_GATEWAY
+        Internal logic failure or dependency error.
+
+     503 SERVICE_UNAVAILABLE
+        The server is temporarily unavailable.
+
+
+6. Commands
+
+6.1 Authentication
+
+   LOGIN "username"
+
+      Registers or logs in a user.
+
+      Responses:
+        200 OK
+        401 UNAUTHORIZED
+
+   LOGOUT
+
+      Logs out the current user.
+
+6.2 User Management
+
+   USERS
+
+      Lists all known users.
+
+   USER "uuid"
+
+      Retrieves information about a specific user.
+
+6.3 Private Messaging
+
+   SEND "user_uuid" "message"
+
+      Sends a message to another user.
+
+   MESSAGES "user_uuid"
+
+      Retrieves conversation history with a user.
+
+6.4 Subscription Management
+
+   SUBSCRIBE "team_uuid"
+
+      Subscribes the client to a team.
+
+   UNSUBSCRIBE "team_uuid"
+
+      Removes subscription.
+
+   SUBSCRIBED ["team_uuid"]
+
+      Lists subscriptions or subscribers.
+
+6.5 Context Management
+
+   USE ["team_uuid"] ["channel_uuid"] ["thread_uuid"]
+
+      Sets the current working context.
+
+
+7. Contextual Commands
+
+7.1 CREATE
+
+   Behavior depends on context:
+
+     No context:
+       CREATE "team_name" "team_description"
+
+     Team context:
+       CREATE "channel_name" "channel_description"
+
+     Channel context:
+       CREATE "thread_title" "thread_message"
+
+     Thread context:
+       CREATE "comment_body"
+
+7.2 LIST
+
+   Lists resources based on context:
+
+     No context: teams
+     Team: channels
+     Channel: threads
+     Thread: replies
+
+7.3 INFO
+
+   Displays information about current context:
+
+     No context: current user
+     Team: team details
+     Channel: channel details
+     Thread: thread details
+
+
+8. Data Model
+
+8.1 UUID
+
+   All resources are identified using UUIDs.
+
+   Example:
+
+     550e8400-e29b-41d4-a716-446655440000
+
+8.2 Constraints
+
+     MAX_NAME_LENGTH = 32
+     MAX_DESCRIPTION_LENGTH = 255
+     MAX_BODY_LENGTH = 512
+
+   Requests exceeding these limits MUST return 413.
+
+
+9. Error Handling
+
+   The server MUST validate all inputs.
+
+   Examples:
+
+     Missing quotes:
+       400 BAD_REQUEST
+
+     Unknown resource:
+       404 NOT_FOUND
+
+     Unauthorized action:
+       403 FORBIDDEN
+
+     Not logged in:
+       401 UNAUTHORIZED
+
+
+10. Asynchronous Events
+
+   The server MAY send unsolicited messages:
+
+     EVENT USER_LOGGED_IN <uuid>
+     EVENT USER_LOGGED_OUT <uuid>
+     EVENT MESSAGE_RECEIVED <uuid> <message>
+     EVENT TEAM_CREATED <uuid>
+     EVENT CHANNEL_CREATED <uuid>
+     EVENT THREAD_CREATED <uuid>
+     EVENT COMMENT_CREATED <uuid>
+
+   Clients MUST be able to handle these messages at any time.
+
+
+11. Persistence
+
+   The server MUST persist its state to disk on shutdown and reload
+   it on startup if available.
+
+   The storage format is implementation-defined.
+
+
+12. Security Considerations
+
+   - Unauthenticated users MUST NOT access protected resources.
+   - Users MUST NOT interact with teams they are not subscribed to.
+   - Input validation MUST be enforced to prevent malformed requests.
+
+
+13. Examples
+
+   Request:
+
+     LOGIN "john"
+
+   Response:
+
+     200 OK
+
+   Request:
+
+     CREATE "team1" "description"
+
+   Response:
+
+     201 CREATED
+     <team_uuid>
+
+   Invalid request:
+
+     CREATE team1
+
+   Response:
+
+     400 BAD_REQUEST
+
+
+14. Conclusion
+
+   MTP provides a simple and structured protocol for collaborative
+   communication systems, with clear semantics and extensibility.    

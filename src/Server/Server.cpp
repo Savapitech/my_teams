@@ -25,6 +25,8 @@ void Server::run() {
                        this->_socket.getPort())
                .c_str());
 
+  this->_database.load("myteams.db");
+
   while (this->_isRunning) {
     poll_result = poll(this->_fds.data(), this->_fds.size(), -1);
 
@@ -68,6 +70,8 @@ void Server::run() {
     if (this->_fds[0].revents & POLLIN)
       this->handleNewConnection();
   }
+
+  this->_database.save("myteams.db");
 }
 
 void Server::handleNewConnection() {
@@ -85,7 +89,7 @@ void Server::handleNewConnection() {
   this->_clients.push_back(newClient);
   this->_fds.push_back({.fd = clientFd, .events = POLLIN, .revents = 0});
 
-  LOG_INFO(std::format("New client connected from {}", inet_ntoa(clientAddr.sin_addr)).c_str());
+  LOG_INFO(std::format("New client connected from {}", inet_ntoa(clientAddr.sin_addr)));
 }
 
 void Server::handleClientMessage(int clientFd) {
@@ -109,7 +113,15 @@ void Server::disconnectClient(int fd) {
       [fd](const std::shared_ptr<Client> &c) { return c->getFd() == fd; });
 
   if (clientIt != this->_clients.end()) {
-    LOG_INFO(std::format("Client {} disconnected", inet_ntoa((*clientIt)->getAddr().sin_addr)).c_str());
+    LOG_INFO(std::format("Client {} disconnected", inet_ntoa((*clientIt)->getAddr().sin_addr)));
     this->_clients.erase(clientIt);
   }
+}
+
+void Server::stop() {
+  this->_isRunning = false;
+}
+
+Database &Server::getDatabase() {
+  return this->_database;
 }

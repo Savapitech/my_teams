@@ -8,12 +8,14 @@
 
 #include "Client.hpp"
 #include "Socket.hpp"
+#include "Database.hpp"
 
 class Server {
 private:
   Socket _socket;
   std::vector<pollfd> _fds;
   std::vector<std::shared_ptr<Client>> _clients;
+  Database _database;
   bool _isRunning = true;
 
 public:
@@ -22,4 +24,6 @@ public:
   void handleNewConnection();
   void handleClientMessage(int clientFd);
   void disconnectClient(int fd);
+  void stop();
+  Database &getDatabase();
 };

@@ -66,6 +66,6 @@ void Client::handleMessage() {
 }
 
 void Client::processCommand(const std::string &commandLine) {
-  LOG_DEBUG(std::format("Received from {} [{}]", inet_ntoa(this->_addr.sin_addr), commandLine).c_str());
+  LOG_DEBUG(std::format("Received from {} [{}]", inet_ntoa(this->_addr.sin_addr), commandLine));
   this->sendMessage("200 Command received\n");
 }

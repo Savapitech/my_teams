@@ -2,5 +2,6 @@ myteams_server
 myteams_cli
 a.txt
 .build
+*.db
 .direnv
 .cache

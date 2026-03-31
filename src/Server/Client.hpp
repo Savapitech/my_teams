@@ -1,0 +1,29 @@
+#pragma once
+
+#include <memory>
+#include <netinet/in.h>
+#include <string>
+
+class Client : public std::enable_shared_from_this<Client> {
+private:
+  int _fd;
+  sockaddr_in _addr;
+  bool _isConnected = true;
+  std::string _buffer;
+
+public:
+  Client(int fd, sockaddr_in addr);
+  ~Client();
+
+  void close();
+  int getFd() const;
+  sockaddr_in getAddr() const;
+
+  void handleMessage();
+  void sendMessage(const std::string &msg);
+  bool isConnected() const;
+  void disconnect();
+
+private:
+  void processCommand(const std::string &commandLine);
+};

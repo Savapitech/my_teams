@@ -43,6 +43,10 @@ endef
 $(eval $(call mk-profile, server, SRC_SERVER, , myteams_server))
 $(eval $(call mk-profile, client, SRC_CLIENT, , myteams_cli))
 
+server: $(NAME_server)
+
+client: $(NAME_client)
+
 all: $(NAME_server) $(NAME_client)
 
 debug: CXXFLAGS += -D DEBUG_MODE

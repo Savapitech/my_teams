@@ -3,15 +3,34 @@
 #include <string>
 
 #include <termios.h>
+#include <unistd.h>
 
 #include "Server.hpp"
 #include "Utils/Logger.hpp"
 
-Server *g_server = nullptr;
+static Server *g_server = nullptr;
+static struct termios saved_term_settings;
+
+static void initTerm() {
+  if (isatty(STDIN_FILENO))
+    tcgetattr(STDIN_FILENO, &saved_term_settings);
+
+  struct termios new_settings = saved_term_settings;
+
+  if (isatty(STDIN_FILENO)) {
+    new_settings.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_settings);
+  }
+}
+
+static void restoreTerm() {
+  if (isatty(STDIN_FILENO))
+    tcsetattr(STDIN_FILENO, TCSANOW, &saved_term_settings);
+}
 
 static void handleSignal(int signum) {
-  if (g_server) {
-    LOG_INFO("Signal received, shutting down server gracefully...");
+  if (g_server != nullptr) {
+    LOG_DEBUG("Signal received, shutting down server gracefully...");
     g_server->stop();
   }
 }
@@ -44,12 +63,15 @@ int main(int argc, char **argv) {
     sa.sa_handler = handleSignal;
     sigaction(SIGINT, &sa, nullptr);
     sigaction(SIGTERM, &sa, nullptr);
+    initTerm();
 
     server.run();
     g_server = nullptr;
   } catch (const std::exception &e) {
+    restoreTerm();
     return LOG_FATAL("Server fatal error: " + std::string(e.what())), 84;
   }
 
+  restoreTerm();
   return 0;
 }

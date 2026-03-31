@@ -56,16 +56,17 @@ void Client::handleMessage() {
   while ((pos = this->_buffer.find("\n")) != std::string::npos) {
     std::string commandLine = this->_buffer.substr(0, pos);
     this->_buffer.erase(0, pos + 1);
-    
+
     if (!commandLine.empty() && commandLine.back() == '\r')
       commandLine.pop_back();
-    
+
     if (!commandLine.empty())
       this->processCommand(commandLine);
   }
 }
 
 void Client::processCommand(const std::string &commandLine) {
-  LOG_DEBUG(std::format("Received from {} [{}]", inet_ntoa(this->_addr.sin_addr), commandLine));
+  LOG_DEBUG(std::format("Received from {} [{}]",
+                        inet_ntoa(this->_addr.sin_addr), commandLine));
   this->sendMessage("200 Command received\n");
 }

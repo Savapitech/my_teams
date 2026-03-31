@@ -3,8 +3,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "Utils/Logger.hpp"
 #include "Socket.hpp"
+#include "Utils/Logger.hpp"
 
 Socket::Socket(uint16_t port) {
   this->_port = port;

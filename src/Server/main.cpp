@@ -1,10 +1,11 @@
+#include <csignal>
 #include <iostream>
 #include <string>
 
+#include <termios.h>
+
 #include "Server.hpp"
 #include "Utils/Logger.hpp"
-
-#include <csignal>
 
 Server *g_server = nullptr;
 
@@ -16,8 +17,9 @@ static void handleSignal(int signum) {
 }
 
 static void printHelp() {
-  std::cout << "USAGE: ./myteams_server port\n\n";
-  std::cout << "\tport is the port number on which the server socket listens.\n";
+  std::cout
+      << "USAGE: ./myteams_server port\n\n"
+      << "\tport is the port number on which the server socket listens.\n";
 }
 
 int main(int argc, char **argv) {
@@ -31,8 +33,7 @@ int main(int argc, char **argv) {
       throw std::out_of_range("Port out of range");
     port = static_cast<uint16_t>(parsedPort);
   } catch (const std::exception &) {
-    LOG_ERROR("Invalid port number.");
-    return 84;
+    return LOG_ERROR("Invalid port number."), 84;
   }
 
   try {

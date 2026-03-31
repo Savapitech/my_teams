@@ -33,7 +33,9 @@ public:
   const std::vector<Channel> &getChannels() const { return _channels; }
   const std::vector<Message> &getMessages() const { return _messages; }
   const std::vector<Reply> &getReplies() const { return _replies; }
-  const std::vector<Subscription> &getSubscriptions() const { return _subscriptions; }
+  const std::vector<Subscription> &getSubscriptions() const {
+    return _subscriptions;
+  }
   const std::vector<Team> &getTeams() const { return _teams; }
   const std::vector<Thread> &getThreads() const { return _threads; }
   const std::vector<User> &getUsers() const { return _users; }

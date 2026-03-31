@@ -7,8 +7,8 @@
 #include <sys/poll.h>
 
 #include "Client.hpp"
-#include "Socket.hpp"
 #include "Database.hpp"
+#include "Socket.hpp"
 
 class Server {
 private:

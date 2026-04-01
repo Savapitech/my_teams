@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "Client.hpp"
+#include "Server/Parser.hpp"
 #include "Utils/Logger.hpp"
 
 Client::Client(int fd, sockaddr_in addr) : _fd(fd), _addr(addr) {}
@@ -68,5 +69,11 @@ void Client::handleMessage() {
 void Client::processCommand(const std::string &commandLine) {
   LOG_DEBUG(std::format("Received from {} [{}]",
                         inet_ntoa(this->_addr.sin_addr), commandLine));
+
+  std::string cmd = commandLine.substr(0, commandLine.find_first_of(" \t"));
+  std::vector<std::string> args = ParseArgs(commandLine.substr(cmd.size()));
+
+  LOG_DEBUG(
+      std::format("Parsed command name [{}] args size [{}]", cmd, args.size()));
   this->sendMessage("200 Command received\n");
 }

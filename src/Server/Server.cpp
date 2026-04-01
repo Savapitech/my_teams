@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <csignal>
+#include <exception>
 #include <format>
 
 #include <arpa/inet.h>
+#include <string>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -99,8 +101,15 @@ void Server::handleClientMessage(int clientFd) {
                            return c->getFd() == clientFd;
                          });
 
-  if (it != this->_clients.end())
-    (*it)->handleMessage();
+  if (it != this->_clients.end()) {
+    try {
+      (*it)->handleMessage();
+    } catch (std::exception &e) {
+      LOG_DEBUG(std::format("Client error from {} [{}]",
+                            inet_ntoa((*it)->getAddr().sin_addr), e.what()));
+      (*it)->sendMessage(std::string(e.what()) + "\n");
+    }
+  }
 }
 
 void Server::disconnectClient(int fd) {

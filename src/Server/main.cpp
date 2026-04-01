@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     g_server = nullptr;
   } catch (const std::exception &e) {
     restoreTerm();
+    handleSignal(0);
     return LOG_FATAL("Server fatal error: " + std::string(e.what())), 84;
   }
 

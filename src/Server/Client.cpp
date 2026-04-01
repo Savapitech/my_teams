@@ -44,6 +44,10 @@ sockaddr_in Client::getAddr() const { return this->_addr; }
 
 bool Client::isConnected() const { return this->_isConnected; }
 
+bool Client::isLoggedIn() { return this->_isLoggedIn; }
+
+void Client::setLogged(bool log) { this->_isLoggedIn = log; }
+
 void Client::sendMessage(const std::string &msg) {
   if (this->_fd < 0)
     return;

@@ -12,6 +12,7 @@ private:
   int _fd;
   sockaddr_in _addr;
   bool _isConnected = true;
+  bool _isLoggedIn = false;
   std::string _buffer;
   std::map<std::string, std::shared_ptr<commands::ICommand>> _commands;
 
@@ -29,6 +30,8 @@ public:
   void sendMessage(const std::string &msg);
   bool isConnected() const;
   void disconnect();
+  void setLogged(bool log);
+  bool isLoggedIn();
 
 private:
   void processCommand(const std::string &commandLine);

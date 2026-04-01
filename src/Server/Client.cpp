@@ -1,13 +1,22 @@
 #include <format>
 
 #include <arpa/inet.h>
+#include <stdexcept>
 #include <unistd.h>
 
 #include "Client.hpp"
 #include "Server/Parser.hpp"
 #include "Utils/Logger.hpp"
 
-Client::Client(int fd, sockaddr_in addr) : _fd(fd), _addr(addr) {}
+#include "Commands/Login.hpp"
+
+void Client::registerCommands() {
+  this->_commands["LOGIN"] = std::make_shared<commands::Login>();
+}
+
+Client::Client(int fd, sockaddr_in addr) : _fd(fd), _addr(addr) {
+  registerCommands();
+}
 
 Client::~Client() {
   try {
@@ -75,5 +84,10 @@ void Client::processCommand(const std::string &commandLine) {
 
   LOG_DEBUG(
       std::format("Parsed command name [{}] args size [{}]", cmd, args.size()));
-  this->sendMessage("200 Command received\n");
+
+  auto it = this->_commands.find(cmd);
+  if (it != this->_commands.end())
+    it->second->execute(shared_from_this(), args);
+  else
+    throw std::runtime_error("400 Unknown command.");
 }

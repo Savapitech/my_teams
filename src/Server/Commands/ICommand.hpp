@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Server/Client.hpp"
+class Client;
 
 namespace commands {
 

@@ -1,6 +1,7 @@
 MAKE_FLAGS += -j
 
 SRC_SERVER := $(wildcard src/Server/*.cpp)
+SRC_SERVER += $(wildcard src/Server/Commands/*.cpp)
 
 SRC_CLIENT := $(wildcard src/Client/*.cpp)
 

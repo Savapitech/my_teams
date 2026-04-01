@@ -1,8 +1,11 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <netinet/in.h>
 #include <string>
+
+#include "Commands/ICommand.hpp"
 
 class Client : public std::enable_shared_from_this<Client> {
 private:
@@ -10,6 +13,9 @@ private:
   sockaddr_in _addr;
   bool _isConnected = true;
   std::string _buffer;
+  std::map<std::string, std::shared_ptr<commands::ICommand>> _commands;
+
+  void registerCommands();
 
 public:
   Client(int fd, sockaddr_in addr);

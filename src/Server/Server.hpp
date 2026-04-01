@@ -10,7 +10,7 @@
 #include "Database.hpp"
 #include "Socket.hpp"
 
-class Server {
+class Server : public std::enable_shared_from_this<Server> {
 private:
   Socket _socket;
   std::vector<pollfd> _fds;

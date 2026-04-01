@@ -87,7 +87,7 @@ void Server::handleNewConnection() {
     return;
   }
 
-  auto newClient = std::make_shared<Client>(clientFd, clientAddr);
+  auto newClient = std::make_shared<Client>(clientFd, clientAddr, *this);
   this->_clients.push_back(newClient);
   this->_fds.push_back({.fd = clientFd, .events = POLLIN, .revents = 0});
 

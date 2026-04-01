@@ -14,7 +14,8 @@ void Client::registerCommands() {
   this->_commands["LOGIN"] = std::make_shared<commands::Login>();
 }
 
-Client::Client(int fd, sockaddr_in addr) : _fd(fd), _addr(addr) {
+Client::Client(int fd, sockaddr_in addr, std::reference_wrapper<Server> server)
+    : _fd(fd), _addr(addr), _server(server) {
   registerCommands();
 }
 
@@ -47,6 +48,12 @@ bool Client::isConnected() const { return this->_isConnected; }
 bool Client::isLoggedIn() { return this->_isLoggedIn; }
 
 void Client::setLogged(bool log) { this->_isLoggedIn = log; }
+
+std::reference_wrapper<Server> Client::getServer() { return this->_server; }
+
+User Client::getActualUser() { return _actualUser; }
+
+void Client::setActualUser(User user) { _actualUser = user; }
 
 void Client::sendMessage(const std::string &msg) {
   if (this->_fd < 0)

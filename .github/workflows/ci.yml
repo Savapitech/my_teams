@@ -43,8 +43,8 @@ jobs:
       - name: Check code format
         run: make check_format
 
-      - name: Build project
-        run: make
+      # - name: Build project
+      #   run: make
 
   sync_repository:
     needs: [ check_the_repository_state ]

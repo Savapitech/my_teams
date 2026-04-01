@@ -20,7 +20,7 @@ void Login::execute(std::shared_ptr<Client> client,
       LOG_DEBUG("User " + std::string(user.name) + " is logged in, uuid " +
                 std::string(user.uuid));
       client->sendMessage("200 Logged in as " + std::string(user.name) +
-                          " uuid " + std::string(user.uuid));
+                          " uuid " + std::string(user.uuid) + "\n");
       return;
     }
   }

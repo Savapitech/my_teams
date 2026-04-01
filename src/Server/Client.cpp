@@ -8,10 +8,12 @@
 #include "Server/Parser.hpp"
 #include "Utils/Logger.hpp"
 
+#include "Commands/Create.hpp"
 #include "Commands/Login.hpp"
 
 void Client::registerCommands() {
   this->_commands["LOGIN"] = std::make_shared<commands::Login>();
+  this->_commands["CREATE"] = std::make_shared<commands::Create>();
 }
 
 Client::Client(int fd, sockaddr_in addr, std::reference_wrapper<Server> server)

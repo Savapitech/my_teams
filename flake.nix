@@ -25,15 +25,6 @@
           [
             compiledb
             gcovr
-          ] ++ (if !isDarwinAarch64 then [
-            sfml
-            ncurses
-            pkg-config
-            SDL2
-            SDL2_image
-          ] else [
-            libcxx
-          ]) ++ [
             criterion
             clang
             clang-tools

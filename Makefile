@@ -15,6 +15,14 @@ CXXFLAGS += -Wstrict-aliasing=0 -Wunreachable-code
 CXXFLAGS += -Wwrite-strings -Werror=format-nonliteral -Werror=return-type
 CXXFLAGS += -std=c++20 -iquote src
 
+LDLIBS := -L libs/
+
+ifeq ($(shell uname -s),Darwin)
+LDLIBS += -lmyteams_macos
+else
+LDLIBS += -lmyteams
+endif
+
 include utils.mk
 
 .PHONY: _start all

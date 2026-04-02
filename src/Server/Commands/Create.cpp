@@ -1,8 +1,14 @@
 #include <stdexcept>
 
 #include <cstring>
+
+#ifdef DARWIN_KERNEL
 #include <sys/syslimits.h>
 #include <uuid/uuid.h>
+#else
+#include <limits.h>
+#include <uuid.h>
+#endif
 
 #include "Create.hpp"
 #include "Server/Client.hpp"

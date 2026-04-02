@@ -23,6 +23,10 @@ else
 LDLIBS += -lmyteams
 endif
 
+ifeq ($(shell uname -s),Darwin)
+CXXFLAGS += -D DARWIN_KERNEL
+endif
+
 include utils.mk
 
 .PHONY: _start all

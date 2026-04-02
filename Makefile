@@ -30,7 +30,6 @@ OBJ_$(strip $1) := $$($(strip $2):%.cpp=$$(BUILD_DIR)/$(strip $1)/%.o)
 
 $$(BUILD_DIR)/$(strip $1)/%.o: %.cpp
 	@ mkdir -p $$(dir $$@)
-	@ mkdir -p lib
 	@ $$(COMPILE.cpp) $$(CXXFLAGS) $(strip $3) $$< -o $$@
 	@ $$(LOG_TIME) "$$(C_GREEN) CC $$(C_PURPLE) $$(notdir $$@) $$(C_RESET)"
 

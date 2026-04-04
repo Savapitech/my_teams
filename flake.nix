@@ -30,6 +30,7 @@
             clang-tools
             util-linux
             util-linux.dev
+            nodejs_24
           ];
       };
     });

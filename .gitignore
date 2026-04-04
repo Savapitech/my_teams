@@ -5,3 +5,4 @@ a.txt
 *.db
 .direnv
 .cache
+node_modules

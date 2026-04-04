@@ -19,12 +19,9 @@ LDLIBS := -L libs/
 
 ifeq ($(shell uname -s),Darwin)
 LDLIBS += -lmyteams_macos
+CXXFLAGS += -D DARWIN_KERNEL
 else
 LDLIBS += -lmyteams -luuid
-endif
-
-ifeq ($(shell uname -s),Darwin)
-CXXFLAGS += -D DARWIN_KERNEL
 endif
 
 include utils.mk

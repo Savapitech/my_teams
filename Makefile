@@ -20,7 +20,7 @@ LDLIBS := -L libs/
 ifeq ($(shell uname -s),Darwin)
 LDLIBS += -lmyteams_macos
 else
-LDLIBS += -lmyteams
+LDLIBS += -lmyteams -luuid
 endif
 
 ifeq ($(shell uname -s),Darwin)

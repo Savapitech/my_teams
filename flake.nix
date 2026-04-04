@@ -28,6 +28,8 @@
             criterion
             clang
             clang-tools
+            util-linux
+            util-linux.dev
           ];
       };
     });

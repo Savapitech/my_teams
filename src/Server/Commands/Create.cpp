@@ -25,13 +25,12 @@ void Create::execute(std::shared_ptr<Client> client,
     return;
   }
 
-  std::string teamCtx = client->getTeamContext();
-  std::string channelCtx = client->getChannelContext();
-  std::string threadCtx = client->getThreadContext();
+  Client::ContextType ctxType = client->getContextType();
+  std::string ctxUuid = client->getContextUuid();
 
   auto &db = client->getServer().get().getDatabase();
 
-  if (teamCtx.empty() && channelCtx.empty() && threadCtx.empty()) {
+  if (ctxType == Client::ContextType::NONE) {
     if (args.size() != 2) {
       client->sendMessage("400 Bad request, need team name and description\n");
       return;
@@ -59,7 +58,7 @@ void Create::execute(std::shared_ptr<Client> client,
     client->sendMessage("201 Team created: " + std::string(newTeam.uuid) + " " +
                         std::string(newTeam.name) + " " +
                         std::string(newTeam.description) + "\n");
-  } else if (!teamCtx.empty() && channelCtx.empty() && threadCtx.empty()) {
+  } else if (ctxType == Client::ContextType::TEAM) {
     if (args.size() != 2) {
       client->sendMessage(
           "400 Bad request, need channel name and description\n");
@@ -70,7 +69,7 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newChannel.uuid);
-    std::strncpy(newChannel.team_uuid, teamCtx.c_str(), MAX_UUID_LENGTH - 1);
+    std::strncpy(newChannel.team_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
     newChannel.team_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newChannel.name, args[0].c_str(), MAX_NAME_LENGTH - 1);
     newChannel.name[MAX_NAME_LENGTH - 1] = '\0';
@@ -82,7 +81,7 @@ void Create::execute(std::shared_ptr<Client> client,
     client->sendMessage("201 Channel created: " + std::string(newChannel.uuid) +
                         " " + std::string(newChannel.name) + " " +
                         std::string(newChannel.description) + "\n");
-  } else if (!teamCtx.empty() && !channelCtx.empty() && threadCtx.empty()) {
+  } else if (ctxType == Client::ContextType::CHANNEL) {
     if (args.size() != 2) {
       client->sendMessage("400 Bad request, need thread title and body\n");
       return;
@@ -92,8 +91,7 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newThread.uuid);
-    std::strncpy(newThread.channel_uuid, channelCtx.c_str(),
-                 MAX_UUID_LENGTH - 1);
+    std::strncpy(newThread.channel_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
     newThread.channel_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newThread.creator_uuid, client->getActualUser().uuid,
                  MAX_UUID_LENGTH - 1);
@@ -110,7 +108,7 @@ void Create::execute(std::shared_ptr<Client> client,
                         std::to_string(newThread.timestamp) + " " +
                         std::string(newThread.title) + " " +
                         std::string(newThread.body) + "\n");
-  } else if (!teamCtx.empty() && !channelCtx.empty() && !threadCtx.empty()) {
+  } else if (ctxType == Client::ContextType::THREAD) {
     if (args.size() != 1) {
       client->sendMessage("400 Bad request, need reply body\n");
       return;
@@ -120,7 +118,7 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newReply.uuid);
-    std::strncpy(newReply.thread_uuid, threadCtx.c_str(), MAX_UUID_LENGTH - 1);
+    std::strncpy(newReply.thread_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
     newReply.thread_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newReply.creator_uuid, client->getActualUser().uuid,
                  MAX_UUID_LENGTH - 1);

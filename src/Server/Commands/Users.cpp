@@ -23,6 +23,7 @@ void Users::execute(std::shared_ptr<Client> client,
                 ", Name: " + std::string(user.name) + "\n";
 
   client->sendMessage(response);
-  LOG_DEBUG("Users listed [" + std::to_string(users.size()) + "] users sent to client.");
+  LOG_DEBUG("Users listed [" + std::to_string(users.size()) +
+            "] users sent to client.");
 }
 } // namespace commands

@@ -13,7 +13,7 @@ CXXFLAGS += -Wp,-U_FORTIFY_SOURCE -Wcast-qual
 CXXFLAGS += -Wformat=2 -Wshadow -fno-builtin -Wno-unused-command-line-argument 
 CXXFLAGS += -Wstrict-aliasing=0 -Wunreachable-code
 CXXFLAGS += -Wwrite-strings -Werror=format-nonliteral -Werror=return-type
-CXXFLAGS += -std=c++20 -iquote src
+CXXFLAGS += -std=c++20 -iquote src -iquote src/Server -iquote src/Client
 
 LDLIBS := -L libs/
 

@@ -15,6 +15,9 @@
 #include "Server/Models.hpp"
 #include "Server/Server.hpp"
 #include "Utils/Logger.hpp"
+extern "C" {
+#include "logging_server.h"
+}
 #include <ctime>
 
 namespace commands {
@@ -55,6 +58,8 @@ void Create::execute(std::shared_ptr<Client> client,
     newTeam.description[MAX_DESCRIPTION_LENGTH - 1] = '\0';
 
     teams.push_back(newTeam);
+    server_event_team_created(newTeam.uuid, newTeam.name,
+                              client->getActualUser().uuid);
     client->sendMessage("201 Team created: " + std::string(newTeam.uuid) + " " +
                         std::string(newTeam.name) + " " +
                         std::string(newTeam.description) + "\n");
@@ -78,6 +83,8 @@ void Create::execute(std::shared_ptr<Client> client,
     newChannel.description[MAX_DESCRIPTION_LENGTH - 1] = '\0';
 
     db.getChannels().push_back(newChannel);
+    server_event_channel_created(newChannel.team_uuid, newChannel.uuid,
+                                 newChannel.name);
     client->sendMessage("201 Channel created: " + std::string(newChannel.uuid) +
                         " " + std::string(newChannel.name) + " " +
                         std::string(newChannel.description) + "\n");
@@ -103,6 +110,9 @@ void Create::execute(std::shared_ptr<Client> client,
     newThread.timestamp = time(nullptr);
 
     db.getThreads().push_back(newThread);
+    server_event_thread_created(newThread.channel_uuid, newThread.uuid,
+                                newThread.creator_uuid, newThread.title,
+                                newThread.body);
     client->sendMessage("201 Thread created: " + std::string(newThread.uuid) +
                         " " + std::string(newThread.creator_uuid) + " " +
                         std::to_string(newThread.timestamp) + " " +
@@ -128,6 +138,8 @@ void Create::execute(std::shared_ptr<Client> client,
     newReply.timestamp = time(nullptr);
 
     db.getReplies().push_back(newReply);
+    server_event_reply_created(newReply.thread_uuid, newReply.creator_uuid,
+                               newReply.body);
     client->sendMessage(
         "201 Reply created: " + std::string(newReply.thread_uuid) + " " +
         std::string(newReply.creator_uuid) + " " +

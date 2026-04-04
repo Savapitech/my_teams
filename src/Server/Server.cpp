@@ -11,6 +11,9 @@
 
 #include "Server.hpp"
 #include "Utils/Logger.hpp"
+extern "C" {
+#include "logging_server.h"
+}
 
 Server::Server(uint16_t port) : _socket(port) {
   this->_fds.push_back(
@@ -126,6 +129,8 @@ void Server::disconnectClient(int fd) {
     LOG_INFO(std::format("Client {} disconnected",
                          inet_ntoa((*clientIt)->getAddr().sin_addr)));
     this->_clients.erase(clientIt);
+    if ((*clientIt)->isLoggedIn())
+      server_event_user_logged_out((*clientIt)->getActualUser().uuid);
   }
 }
 

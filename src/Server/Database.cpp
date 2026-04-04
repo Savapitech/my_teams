@@ -1,5 +1,8 @@
 #include "Database.hpp"
 #include "Utils/Logger.hpp"
+extern "C" {
+#include "logging_server.h"
+}
 
 #include <fstream>
 #include <iostream>
@@ -66,4 +69,7 @@ void Database::load(const std::string &filename) {
   ifs.close();
   LOG_INFO(("Database loaded successfully from " + filename).c_str());
   LOG_DEBUG("Database size [" + std::to_string(_users.size()) + "]");
+  for (const auto &u : _users) {
+    server_event_user_loaded(u.uuid, u.name);
+  }
 }

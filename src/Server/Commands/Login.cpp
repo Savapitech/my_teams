@@ -13,6 +13,9 @@
 #include "Server/Client.hpp"
 #include "Server/Server.hpp"
 #include "Utils/Logger.hpp"
+extern "C" {
+#include "logging_server.h"
+}
 
 namespace commands {
 void Login::execute(std::shared_ptr<Client> client,
@@ -28,6 +31,7 @@ void Login::execute(std::shared_ptr<Client> client,
     if (std::string(user.name) == args[0]) {
       client->setLogged(true);
       client->setActualUser(user);
+      server_event_user_logged_in(user.uuid);
       LOG_DEBUG("User " + std::string(user.name) + " is logged in, uuid " +
                 std::string(user.uuid));
       client->sendMessage("200 Logged in as " + std::string(user.name) +
@@ -47,6 +51,8 @@ void Login::execute(std::shared_ptr<Client> client,
 
   client->setLogged(true);
   client->setActualUser(newUser);
+  server_event_user_created(newUser.uuid, newUser.name);
+  server_event_user_logged_in(newUser.uuid);
 
   LOG_DEBUG("Created new user " + std::string(newUser.name) + " with uuid " +
             std::string(newUser.uuid));

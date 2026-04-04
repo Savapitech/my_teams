@@ -1,3 +1,6 @@
+extern "C" {
+#include "logging_server.h"
+}
 #include "Send.hpp"
 #include "Server/Client.hpp"
 #include "Server/Models.hpp"
@@ -33,6 +36,8 @@ void Send::execute(std::shared_ptr<Client> client,
   msg.body[MAX_BODY_LENGTH - 1] = '\0';
   msg.timestamp = time(nullptr);
   client->getServer().get().getDatabase().getMessages().push_back(msg);
+  server_event_private_message_sended(msg.sender_uuid, msg.receiver_uuid,
+                                      msg.body);
   client->sendMessage("200 Message sent\n");
 }
 } // namespace commands

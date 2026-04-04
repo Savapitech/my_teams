@@ -22,9 +22,12 @@ private:
   std::map<std::string, std::shared_ptr<commands::ICommand>> _commands;
   User _actualUser;
 
-  std::string _teamContext;
-  std::string _channelContext;
-  std::string _threadContext;
+public:
+  enum class ContextType { NONE, TEAM, CHANNEL, THREAD };
+
+private:
+  ContextType _contextType = ContextType::NONE;
+  std::string _contextUuid;
 
   void registerCommands();
 
@@ -46,14 +49,9 @@ public:
   User getActualUser();
   void setActualUser(User user);
 
-  std::string getTeamContext() const;
-  void setTeamContext(const std::string &context);
-
-  std::string getChannelContext() const;
-  void setChannelContext(const std::string &context);
-
-  std::string getThreadContext() const;
-  void setThreadContext(const std::string &context);
+  ContextType getContextType() const;
+  std::string getContextUuid() const;
+  void setContext(ContextType type, const std::string &uuid);
 
   void clearCtx();
 

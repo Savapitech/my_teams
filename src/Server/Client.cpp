@@ -9,11 +9,33 @@
 #include "Utils/Logger.hpp"
 
 #include "Commands/Create.hpp"
+#include "Commands/Info.hpp"
+#include "Commands/List.hpp"
 #include "Commands/Login.hpp"
+#include "Commands/Logout.hpp"
+#include "Commands/Messages.hpp"
+#include "Commands/Send.hpp"
+#include "Commands/Subscribe.hpp"
+#include "Commands/Subscribed.hpp"
+#include "Commands/Unsubscribe.hpp"
+#include "Commands/Use.hpp"
+#include "Commands/User.hpp"
+#include "Commands/Users.hpp"
 
 void Client::registerCommands() {
   this->_commands["LOGIN"] = std::make_shared<commands::Login>();
+  this->_commands["LOGOUT"] = std::make_shared<commands::Logout>();
   this->_commands["CREATE"] = std::make_shared<commands::Create>();
+  this->_commands["USE"] = std::make_shared<commands::Use>();
+  this->_commands["LIST"] = std::make_shared<commands::List>();
+  this->_commands["INFO"] = std::make_shared<commands::Info>();
+  this->_commands["SEND"] = std::make_shared<commands::Send>();
+  this->_commands["MESSAGES"] = std::make_shared<commands::Messages>();
+  this->_commands["SUBSCRIBE"] = std::make_shared<commands::Subscribe>();
+  this->_commands["SUBSCRIBED"] = std::make_shared<commands::Subscribed>();
+  this->_commands["UNSUBSCRIBE"] = std::make_shared<commands::Unsubscribe>();
+  this->_commands["USERS"] = std::make_shared<commands::Users>();
+  this->_commands["USER"] = std::make_shared<commands::UserCommand>();
 }
 
 Client::Client(int fd, sockaddr_in addr, std::reference_wrapper<Server> server)
@@ -56,6 +78,19 @@ std::reference_wrapper<Server> Client::getServer() { return this->_server; }
 User Client::getActualUser() { return _actualUser; }
 
 void Client::setActualUser(User user) { _actualUser = user; }
+
+Client::ContextType Client::getContextType() const { return _contextType; }
+std::string Client::getContextUuid() const { return _contextUuid; }
+
+void Client::setContext(ContextType type, const std::string &uuid) {
+  _contextType = type;
+  _contextUuid = uuid;
+}
+
+void Client::clearCtx() {
+  _contextType = ContextType::NONE;
+  _contextUuid.clear();
+}
 
 void Client::sendMessage(const std::string &msg) {
   if (this->_fd < 0)

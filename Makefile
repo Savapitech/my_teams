@@ -86,6 +86,9 @@ fclean:
 	@ $(LOG_TIME) "$(C_YELLOW) RM $(C_PURPLE) $(NAME_server) $(NAME_client) $(BUILD_DIR) \
 		$(C_RESET)"
 
+launch_server: all
+	@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./libs"; ./$(NAME_server) 5290
+
 .NOTPARALLEL: re
 re:	fclean all
 

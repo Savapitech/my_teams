@@ -1,0 +1,26 @@
+<!DOCTYPE scale>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTeams Web Client</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MyTeams : Web Client</h1>
+            <p>WebSocket to TCP MTP Proxy Server</p>
+        </header>
+
+        <div id="log" class="log-container"></div>
+
+        <div class="input-container">
+            <input type="text" id="cmdInput" placeholder="ex: LOGIN &quot;user&quot; ou CREATE &quot;team&quot; &quot;desc&quot;..." autocomplete="off">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

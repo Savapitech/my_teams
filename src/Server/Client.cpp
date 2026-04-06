@@ -96,6 +96,7 @@ void Client::sendMessage(const std::string &msg) {
   if (this->_fd < 0)
     return;
   write(this->_fd, msg.c_str(), msg.length());
+  LOG_DEBUG("Message sent to client [" + msg + "]");
 }
 
 void Client::handleMessage() {

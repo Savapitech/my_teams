@@ -20,9 +20,13 @@ LDLIBS := -L libs/
 ifeq ($(shell uname -s),Darwin)
 LDLIBS += -lmyteams_macos
 CXXFLAGS += -D DARWIN_KERNEL
+LDLIB_PATH := 'DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:./libs'
 else
 LDLIBS += -lmyteams -luuid
+LDLIB_PATH := 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs'
 endif
+
+
 
 include utils.mk
 
@@ -84,7 +88,7 @@ fclean:
 		$(C_RESET)"
 
 launch_server: all
-	@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./libs"; ./$(NAME_server) 5290
+	@ export $(LDLIB_PATH); ./$(NAME_server) 5290
 
 .NOTPARALLEL: re
 re:	fclean all

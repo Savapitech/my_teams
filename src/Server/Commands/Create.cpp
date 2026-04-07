@@ -29,7 +29,6 @@ void Create::execute(std::shared_ptr<Client> client,
   }
 
   Client::ContextType ctxType = client->getContextType();
-  std::string ctxUuid = client->getContextUuid();
 
   auto &db = client->getServer().get().getDatabase();
 
@@ -74,7 +73,8 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newChannel.uuid);
-    std::strncpy(newChannel.team_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
+    std::strncpy(newChannel.team_uuid, client->getTeamUuid().c_str(),
+                 MAX_UUID_LENGTH - 1);
     newChannel.team_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newChannel.name, args[0].c_str(), MAX_NAME_LENGTH - 1);
     newChannel.name[MAX_NAME_LENGTH - 1] = '\0';
@@ -98,7 +98,8 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newThread.uuid);
-    std::strncpy(newThread.channel_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
+    std::strncpy(newThread.channel_uuid, client->getChannelUuid().c_str(),
+                 MAX_UUID_LENGTH - 1);
     newThread.channel_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newThread.creator_uuid, client->getActualUser().uuid,
                  MAX_UUID_LENGTH - 1);
@@ -128,7 +129,8 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newReply.uuid);
-    std::strncpy(newReply.thread_uuid, ctxUuid.c_str(), MAX_UUID_LENGTH - 1);
+    std::strncpy(newReply.thread_uuid, client->getThreadUuid().c_str(),
+                 MAX_UUID_LENGTH - 1);
     newReply.thread_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newReply.creator_uuid, client->getActualUser().uuid,
                  MAX_UUID_LENGTH - 1);

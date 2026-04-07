@@ -15,7 +15,6 @@ void Info::execute(std::shared_ptr<Client> client,
   }
 
   Client::ContextType ctxType = client->getContextType();
-  std::string ctxUuid = client->getContextUuid();
   auto db = client->getServer().get().getDatabase();
 
   std::string response = "200 Info:\n";
@@ -26,7 +25,7 @@ void Info::execute(std::shared_ptr<Client> client,
                 ", Name: " + std::string(actualUser.name) + "\n";
   } else if (ctxType == Client::ContextType::TEAM) {
     for (const auto &t : db.getTeams()) {
-      if (std::string(t.uuid) == ctxUuid) {
+      if (std::string(t.uuid) == client->getTeamUuid()) {
         response += "Team UUID: " + std::string(t.uuid) +
                     ", Name: " + std::string(t.name) +
                     ", Desc: " + std::string(t.description) + "\n";
@@ -35,7 +34,7 @@ void Info::execute(std::shared_ptr<Client> client,
     }
   } else if (ctxType == Client::ContextType::CHANNEL) {
     for (const auto &c : db.getChannels()) {
-      if (std::string(c.uuid) == ctxUuid) {
+      if (std::string(c.uuid) == client->getChannelUuid()) {
         response += "Channel UUID: " + std::string(c.uuid) +
                     ", Name: " + std::string(c.name) +
                     ", Desc: " + std::string(c.description) + "\n";
@@ -44,7 +43,7 @@ void Info::execute(std::shared_ptr<Client> client,
     }
   } else if (ctxType == Client::ContextType::THREAD) {
     for (const auto &th : db.getThreads()) {
-      if (std::string(th.uuid) == ctxUuid) {
+      if (std::string(th.uuid) == client->getThreadUuid()) {
         response += "Thread UUID: " + std::string(th.uuid) +
                     ", Title: " + std::string(th.title) +
                     ", Body: " + std::string(th.body) + "\n";

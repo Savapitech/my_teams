@@ -4,8 +4,8 @@
 #include <exception>
 #include <poll.h>
 
+#include <exception>
 #include <memory>
-
 
 #include "Client.hpp"
 #include "ICommand.hpp"
@@ -48,12 +48,29 @@ Client::Client(const std::string &ip, const std::string &port)
   _commandMap["CREATE"] = std::make_unique<CreateCommand>();
   _commandMap["LISR"] = std::make_unique<ListCommand>();
   _commandMap["INFO"] = std::make_unique<InfoCommand>();
-  
 }
 
-void Client::handleCommand(const std::string &buffer, int fd)
-{
+void Client::handleCommand(const std::string &buffer, int fd) {
+  if (buffer.find("100") == 0) {
+    std::cout << "EVENT;" << buffer << std::endl;
+    return;
+  }
+  if (_pendingCommands.empty()) {
+    std::cerr << "Warning : no command in the queu." << std::endl;
+    return;
+  }
 
+  std::string currentCmd = _pendingCommands.front();
+  _pendingCommands.pop();
+
+  auto it = _commandMap.find(currentCmd);
+
+  if (it != _commandMap.end()) {
+    it->second->logCommand(buffer);
+  } else {
+    std::cout << "Error: Commande [" << currentCmd << "] not find."
+              << std::endl;
+  }
 }
 
 void Client::run() {
@@ -64,29 +81,27 @@ void Client::run() {
     int ret = poll(fds, 2, -1);
 
     if (fds[0].revents & POLLIN) {
-        char buffer[1024];
-        read(0, buffer, 1024);
-        std::cout << buffer;
-        cmdtest.sendCommand(buffer, this->_fd);
+      int retValue = 0;
+      char buffer[1024];
+      retValue = read(0, buffer, 1024);
+      if (retValue == -1)
+        throw std::runtime_error("Error");
+      buffer[retValue] = 0;
+      std::cout << buffer;
+      cmdtest.sendCommand(buffer, this->_fd, this->_pendingCommands);
     }
     if (fds[1].revents & (POLLHUP | POLLERR | POLLNVAL)) {
       throw std::runtime_error("Server disconect");
     }
     if (fds[1].revents & POLLIN) {
-        int r_value = 0;
-        char buffer[1024];
-        r_value = read(this->_fd, buffer, 1024);
-        if (r_value == 0) 
-          throw std::runtime_error("Server disconnected");
-        std::cout << buffer;
-        this->handleCommand(buffer, this->_fd);
+      int retValue = 0;
+      char buffer[1024];
+      retValue = read(this->_fd, buffer, 1024);
+      if (retValue == 0)
+        throw std::runtime_error("Server disconnected");
+      buffer[retValue] = 0;
+      std::cout << buffer;
+      this->handleCommand(buffer, this->_fd);
     }
   }
 }
-
-/*
-// map [std::string command] -> [std::function<void (std::vector<std::string>)>]
-// 
-//
-//
-*/

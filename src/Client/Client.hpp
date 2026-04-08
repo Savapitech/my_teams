@@ -1,12 +1,12 @@
 #pragma once
 
-#include <string>
-#include <poll.h>
 #include <map>
 #include <memory>
+#include <poll.h>
+#include <queue>
+#include <string>
 
 #include "ICommand.hpp"
-
 
 class Client {
 private:
@@ -16,8 +16,9 @@ private:
   const std::string &_ip;
   std::string commandToSend;
 
-  std::map<std::string, std::unique_ptr<ICommand>> _commandMap; 
-  
+  std::map<std::string, std::unique_ptr<ICommand>> _commandMap;
+  std::queue<std::string> _pendingCommands;
+
   struct pollfd fds[2];
 
   void handleCommand(const std::string &buffer, int fd);

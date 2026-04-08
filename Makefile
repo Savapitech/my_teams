@@ -90,6 +90,9 @@ fclean:
 launch_server: all
 	@ export $(LDLIB_PATH); ./$(NAME_server) 5290
 
+launch_client: all
+	@ export $(LDLIB_PATH); valgrind ./$(NAME_client) 127.0.0.1 5290
+
 .NOTPARALLEL: re
 re:	fclean all
 

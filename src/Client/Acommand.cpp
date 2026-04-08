@@ -1,0 +1,33 @@
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+
+#include <unistd.h>
+
+#include "ICommand.hpp"
+
+void ACommand::sendCommand(const std::string &command, int fd)
+{
+    size_t firstSpace = command.find(' ');
+    std::string cmdName = command.substr(0, firstSpace);
+
+    std::transform(cmdName.begin(), cmdName.end(), cmdName.begin(), ::toupper);
+    std::string commandToSend = cmdName.substr(1); 
+
+    if (firstSpace != std::string::npos) {
+        std::string argsPart = command.substr(firstSpace);
+        commandToSend += argsPart;
+    }
+
+    int quoteCount = std::count(commandToSend.begin(), commandToSend.end(), '"');
+    if (quoteCount % 2 != 0) {
+        std::cerr << "Error : missing quote." << std::endl;
+        return;
+    }
+
+    commandToSend += "\n";
+    std::cout << "Server error: [" << commandToSend << "]" << std::endl;
+    write(fd, commandToSend.c_str(), commandToSend.size());
+}

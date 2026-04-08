@@ -13,7 +13,6 @@ if (username) {
 function showappscreen(username) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appScreen').style.display = 'flex';
-    //document.getElementById('userName').textContent = username;
 }
 
 function showloginscreen(username) {
@@ -22,6 +21,7 @@ function showloginscreen(username) {
 }
 
 let tryingLogin = false;
+let teams = [];
 
 function Login() {
     const username = document.getElementById('usernameInput').value.trim();
@@ -56,7 +56,14 @@ ws.onopen = () => {
     appendLog('Connected to WebSocket proxy.', 'system');
     if (username) {
         ws.send(`LOGIN "${username}"`);
+        ws.send ('LIST');
     }
+
+setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send('LIST');
+    }
+  }, 5000);  
 };
 
 ws.onmessage = (event) => {
@@ -72,12 +79,78 @@ ws.onmessage = (event) => {
         }
         return;
     }
-    appendLog(data.message, data.type);
+    if (data.message.startsWith('Team UUID:')) {
+      const msgMatch = data.message.match(/Team UUID: (.*), Name: (.*), Desc: (.*)/);
+      if (msgMatch) {
+        const team = {
+          uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3], channels: []
+        };
+        let inside = false;
+        for (var i = 0; i < teams.length; i++) {
+          if (teams[i].uuid == team.uuid)
+            inside = true;
+        }
+        if (inside == false) {
+          teams.push(team);
+          displayTeams();
+        }
+      }
+    }
+    if (data.message.startsWith('Channel UUID:')) {
+      const msgMatch = data.message.match(/Channel UUID: (.*), Name: (.*), Desc: (.*), Team UUID: (.*)/);
+      if (msgMatch) {
+        const channel = {
+          uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3]
+        };
+        const teamID = msgMatch[4];
+        const team = teams.find(t => t.uuid == teamID);
+        if (team) {
+          const dup = team.channels.some(c => c.uuid == channel.uuid);
+          if (!dup) {
+            team.channels.push(channel);
+            displayTeams();
+          }
+        }
+      }
+    }
+    //appendLog(data.message, data.type);
 };
 
 ws.onclose = () => {
     appendLog('Disconnected from WebSocket proxy.', 'error');
 };
+
+
+function displayTeams() {
+  const sidemenu = document.querySelector('.sidemenu');
+   
+  sidemenu.innerHTML = '<h1>Teams :</h1>';
+
+  teams.forEach(team => {
+        const div = document.createElement('div');
+        div.className = 'team-container';
+        div.textContent = " - " + team.name;
+
+        const channels = document.createElement('div');
+        channels.className = 'channel-container';
+        team.channels.forEach(el => {
+          const eldiv = document.createElement('div');
+          eldiv.className = 'el-container';
+          eldiv.textContent = " ¤ " + el.name;
+          channels.appendChild(eldiv);
+        });
+        div.appendChild(channels);
+        
+        div.addEventListener('click', () => {
+            ws.send(`USE "${team.uuid}"`);
+            ws.send('LIST');
+        }); 
+        sidemenu.appendChild(div);
+    });
+}
+
+
+
 
 function sendCmd() {
     const cmd = input.value.trim();

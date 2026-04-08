@@ -34,7 +34,7 @@ body {
     padding: 30px;
     display: flex;
     flex-direction: column;
-    gap: 5px; /* adds spacing between elements */
+    gap: 5px;
     background: #252526;
     border-radius: 8px;
     box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
@@ -44,10 +44,6 @@ body {
   height: 40px;
   padding: 10px;
   font-size: 16px;
-}
-
-#login-error {
-  display: none;
 }
 
 .login-container h1,
@@ -79,10 +75,29 @@ body {
     flex-shrink: 0;
     background: #111122;
     display: flex;
+    text-align: right;
+    justify-content: left;
+    flex-direction: column;
 }
 
 .sidemenu h1 {
     border-bottom: 1px solid #444;
+}
+
+.team-container {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  color: white;
+  font-size: 18px;
+  text-align: left;
+  flex-direction: column;
+}
+
+.channel-container {
+  display: flex;
+  text-align: center;
+  flex-direction: column;
 }
 
 .main {

@@ -7,11 +7,57 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: row;
     height: 100vh;
 }
+
+#loginScreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+}
+
+#appScreen {
+    display: none;
+    height: 100vh;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.login-container {
+    height: auto;
+    width: 400px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* adds spacing between elements */
+    background: #252526;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+}
+
+#usernameInput {
+  height: 40px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+#login-error {
+  display: none;
+}
+
+.login-container h1,
+.login-container p {
+    text-align: center;
+}
+
 .container {
-    width: 60%;
-    height: 80%;
+    height: 90%;
+    width: 90%;
     display: flex;
     flex-direction: column;
     background: #252526;
@@ -19,17 +65,54 @@ body {
     box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
     overflow: hidden;
 }
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidemenu {
+    width: 240px;
+    height: 100%;
+    flex-shrink: 0;
+    background: #111122;
+    display: flex;
+}
+
+.sidemenu h1 {
+    border-bottom: 1px solid #444;
+}
+
+.main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 header {
     background: #333333;
     padding: 15px 20px;
     border-bottom: 1px solid #444;
+    margin-bottom: 5px;
 }
+
+header btn {
+  text-align: right;
+}
+
 header h1 {
     margin: 0;
     font-size: 20px;
     color: #fff;
 }
-header p { margin: 5px 0 0 0; font-size: 12px; color: #aaa; }
+
+header p {
+margin: 5px 0 0 0; font-size: 12px; color: #aaa;
+}
+
 .log-container {
     flex: 1;
     padding: 20px;
@@ -40,6 +123,7 @@ header p { margin: 5px 0 0 0; font-size: 12px; color: #aaa; }
     background: #1e1e1e;
     font-family: 'Courier New', Courier, monospace;
 }
+
 .msg { padding: 8px 12px; border-radius: 5px; max-width: 80%; word-wrap: break-word; font-size: 14px;}
 .msg.system { align-self: center; background: transparent; color: #888; font-style: italic; font-size: 12px; }
 .msg.error { align-self: center; background: rgba(255,0,0,0.2); color: #ff5555; }

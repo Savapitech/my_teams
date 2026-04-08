@@ -62,6 +62,8 @@ void Client::handleCommand(const std::string &buffer, int fd) {
 
   std::string currentCmd = _pendingCommands.front();
   _pendingCommands.pop();
+  currentCmd.erase(currentCmd.find_last_not_of("\r\n ") + 1);
+  std::cout << currentCmd << std::endl;
 
   auto it = _commandMap.find(currentCmd);
 

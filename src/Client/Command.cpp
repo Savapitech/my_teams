@@ -10,6 +10,16 @@ extern "C" {
 #include "logging_client.h"
 }
 
+#define CLR_BOLD_INFO "\033[1;34m"
+#define CLR_BOLD_WARNING "\033[1;35m"
+#define CLR_BOLD_ERROR "\033[1;31m"
+#define CLR_BOLD_DEBUG "\033[1;32m"
+#define CLR_INFO "\033[0;34m"
+#define CLR_WARNING "\033[0;35m"
+#define CLR_ERROR "\033[0;31m"
+#define CLR_DEBUG "\033[0;32m"
+#define CLR_RESET "\033[0m"
+
 std::vector<std::string> extractArgs(const std::string &response) {
   std::vector<std::string> args;
   std::stringstream ss(response);
@@ -37,19 +47,19 @@ void HelpCommand::logCommand(const std::string &serverResponse) {
 }
 
 void LoginCommand::logCommand(const std::string &serverResponse) {
-  std::cout << "LoginCommand\n";
-  int status = getStatusCode(serverResponse);
+    int status = getStatusCode(serverResponse);
+    std::cout << CLR_DEBUG << "LoginCommand:" << status << CLR_RESET << std::endl;
   if (status == 200) {
     std::vector<std::string> args = extractArgs(serverResponse);
     if (args.size() >= 2)
-      client_event_logged_in(args[6].c_str(), args[4].c_str());
-  } else if (status == 401) {
-    client_error_unauthorized();
+        client_event_logged_in(args[6].c_str(), args[4].c_str());
+  } else if (status == 400) {
+        client_error_unauthorized();
   }
 }
 
 void LogoutCommand::logCommand(const std::string &serverResponse) {
-  std::cout << "LogoutCommand\n";
+  std::cout << CLR_DEBUG << "LogoutCommand" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractArgs(serverResponse);
@@ -59,14 +69,15 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UsersCommand::logCommand(const std::string &serverResponse) {
-  std::cout << "LogoutCommand\n";
+  std::cout << CLR_DEBUG << "Users Command" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractArgs(serverResponse);
-    for (size_t i = 0; i + 2 < args.size(); i += 3) {
+    for (size_t i = 3; i + 5 < args.size(); i += 6) {
+        std::cout << CLR_DEBUG << "User UUID: [" << args[i + 1].c_str() << "], User Name: [" << args[i + 3].c_str() << "], IsConnected: [" <<  args[i + 5] << "]" << CLR_RESET << std::endl;
       client_print_users(
-          args[i].c_str(), args[i + 1].c_str(),
-          std::stoi(args[i + 2])); // Il manque le status coté server
+          args[i + 1].c_str(), args[i + 3].c_str(),
+          std::stoi(args[i + 5]));
     }
   }
 }
@@ -76,10 +87,10 @@ void UserCommand::logCommand(const std::string &serverResponse) {
   std::vector<std::string> args = extractArgs(serverResponse);
 
   if (status == 200 && args.size() >= 3) {
-    client_print_user(args[0].c_str(), args[1].c_str(),
-                      0); // il manque le status
+    client_print_user(args[6].c_str(), args[4].c_str(),
+                      std::stoi(args[8]));
   } else if (status == 404 && args.size() >= 1) {
-    client_error_unknown_user(args[0].c_str()); // Il faut renvoyer le uuid
+    client_error_unknown_user(args[0].c_str()); /*Faut faire en sorte que le server renvois la commnande qu'on lui envoie quand ça fail pour que sa soit plus ismple*/
   }
 }
 

@@ -25,5 +25,6 @@ public:
   void handleClientMessage(int clientFd);
   void disconnectClient(int fd);
   void stop();
+  const std::vector<std::shared_ptr<Client>>& getClients() const { return _clients; }
   Database &getDatabase();
 };

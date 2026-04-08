@@ -27,7 +27,9 @@ public:
 
 private:
   ContextType _contextType = ContextType::NONE;
-  std::string _contextUuid;
+  std::string _teamUuid;
+  std::string _channelUuid;
+  std::string _threadUuid;
 
   void registerCommands();
 
@@ -50,8 +52,13 @@ public:
   void setActualUser(User user);
 
   ContextType getContextType() const;
-  std::string getContextUuid() const;
-  void setContext(ContextType type, const std::string &uuid);
+  std::string getTeamUuid() const;
+  std::string getChannelUuid() const;
+  std::string getThreadUuid() const;
+  void setTeamUuid(const std::string &uuid);
+  void setChannelUuid(const std::string &uuid);
+  void setThreadUuid(const std::string &uuid);
+  void setContextType(ContextType type);
 
   void clearCtx();
 

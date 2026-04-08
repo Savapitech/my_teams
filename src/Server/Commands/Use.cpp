@@ -12,7 +12,7 @@ void Use::execute(std::shared_ptr<Client> client,
   }
 
   if (args.size() > 3) {
-    client->sendMessage("400 Bad request, too many args\n");
+    client->sendMessage("400 Bad request: too many args\n");
     return;
   }
 
@@ -23,49 +23,69 @@ void Use::execute(std::shared_ptr<Client> client,
     return;
   }
 
-  auto const &teams = client->getServer().get().getDatabase().getTeams();
-  auto const &channels = client->getServer().get().getDatabase().getChannels();
-  auto const &threads = client->getServer().get().getDatabase().getThreads();
+  auto &db = client->getServer().get().getDatabase();
 
-  std::string lastMatchedUuid = "";
-  Client::ContextType matchedType = Client::ContextType::NONE;
-  bool found = false;
-
-  for (const auto &th : threads) {
-    if (std::string(th.uuid) == args[0]) {
-      matchedType = Client::ContextType::THREAD;
-      lastMatchedUuid = args[0];
-      found = true;
+  const std::string &teamUuid = args[0];
+  bool teamFound = false;
+  for (const auto &t : db.getTeams()) {
+    if (std::string(t.uuid) == teamUuid) {
+      teamFound = true;
       break;
     }
   }
-
-  for (const auto &c : channels) {
-    if (std::string(c.uuid) == args[0]) {
-      matchedType = Client::ContextType::CHANNEL;
-      lastMatchedUuid = args[0];
-      found = true;
-      break;
-    }
+  if (!teamFound) {
+    client->sendMessage("404 Not Found: Unknown team UUID\n");
+    return;
   }
+  client->setTeamUuid(teamUuid);
+  client->setContextType(Client::ContextType::TEAM);
 
-  for (const auto &t : teams) {
-    if (std::string(t.uuid) == args[0]) {
-      matchedType = Client::ContextType::TEAM;
-      lastMatchedUuid = args[0];
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    client->sendMessage("404 Not Found: Unknown UUID inside use command\n");
-    client->clearCtx();
+  if (args.size() == 1) {
+    client->sendMessage("200 Context updated\n");
     return;
   }
 
-  if (matchedType != Client::ContextType::NONE)
-    client->setContext(matchedType, lastMatchedUuid);
+  const std::string &channelUuid = args[1];
+  bool channelFound = false;
+  for (const auto &c : db.getChannels()) {
+    if (std::string(c.uuid) == channelUuid &&
+        std::string(c.team_uuid) == teamUuid) {
+      channelFound = true;
+      break;
+    }
+  }
+  if (!channelFound) {
+    client->sendMessage(
+        "404 Not Found: Unknown channel UUID (or not in this team)\n");
+    client->clearCtx();
+    return;
+  }
+  client->setChannelUuid(channelUuid);
+  client->setContextType(Client::ContextType::CHANNEL);
+
+  if (args.size() == 2) {
+    client->sendMessage("200 Context updated\n");
+    return;
+  }
+
+  const std::string &threadUuid = args[2];
+  bool threadFound = false;
+  for (const auto &th : db.getThreads()) {
+    if (std::string(th.uuid) == threadUuid &&
+        std::string(th.channel_uuid) == channelUuid) {
+      threadFound = true;
+      break;
+    }
+  }
+  if (!threadFound) {
+    client->sendMessage(
+        "404 Not Found: Unknown thread UUID (or not in this channel)\n");
+    client->clearCtx();
+    return;
+  }
+  client->setThreadUuid(threadUuid);
+  client->setContextType(Client::ContextType::THREAD);
+
   client->sendMessage("200 Context updated\n");
 }
 } // namespace commands

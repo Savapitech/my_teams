@@ -80,16 +80,20 @@ User Client::getActualUser() { return _actualUser; }
 void Client::setActualUser(User user) { _actualUser = user; }
 
 Client::ContextType Client::getContextType() const { return _contextType; }
-std::string Client::getContextUuid() const { return _contextUuid; }
+std::string Client::getTeamUuid() const { return _teamUuid; }
+std::string Client::getChannelUuid() const { return _channelUuid; }
+std::string Client::getThreadUuid() const { return _threadUuid; }
 
-void Client::setContext(ContextType type, const std::string &uuid) {
-  _contextType = type;
-  _contextUuid = uuid;
-}
+void Client::setTeamUuid(const std::string &uuid) { _teamUuid = uuid; }
+void Client::setChannelUuid(const std::string &uuid) { _channelUuid = uuid; }
+void Client::setThreadUuid(const std::string &uuid) { _threadUuid = uuid; }
+void Client::setContextType(ContextType type) { _contextType = type; }
 
 void Client::clearCtx() {
   _contextType = ContextType::NONE;
-  _contextUuid.clear();
+  _teamUuid.clear();
+  _channelUuid.clear();
+  _threadUuid.clear();
 }
 
 void Client::sendMessage(const std::string &msg) {

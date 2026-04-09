@@ -46,7 +46,7 @@ Client::Client(const std::string &ip, const std::string &port)
   _commandMap["UNSUBSCRIBE"] = std::make_unique<UnsubscribeCommand>();
   _commandMap["USE"] = std::make_unique<UseCommand>();
   _commandMap["CREATE"] = std::make_unique<CreateCommand>();
-  _commandMap["LISR"] = std::make_unique<ListCommand>();
+  _commandMap["LIST"] = std::make_unique<ListCommand>();
   _commandMap["INFO"] = std::make_unique<InfoCommand>();
 }
 

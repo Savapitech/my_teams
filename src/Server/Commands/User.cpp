@@ -3,6 +3,8 @@
 #include "Server/Server.hpp"
 #include "Utils/Logger.hpp"
 
+#include <iostream>
+
 namespace commands {
 void UserCommand::execute(std::shared_ptr<Client> client,
                           std::vector<std::string> &args) {
@@ -41,7 +43,6 @@ void UserCommand::execute(std::shared_ptr<Client> client,
       return;
     }
   }
-
-  client->sendMessage("404 Not Found: User not found\n");
+  client->sendMessage("404 Not Found: User: " + args[0] + " not found\n");
 }
 } // namespace commands

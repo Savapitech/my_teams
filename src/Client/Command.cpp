@@ -92,9 +92,7 @@ void UserCommand::logCommand(const std::string &serverResponse) {
     client_print_user(args[6].c_str(), args[4].c_str(), std::stoi(args[8]));
   } else if (status == 404 && args.size() >= 1) {
     client_error_unknown_user(
-        args[0].c_str()); /*Faut faire en sorte que le server renvois la
-                             commnande qu'on lui envoie quand ça fail pour que
-                             sa soit plus ismple*/
+        args[4].c_str());
   }
 }
 

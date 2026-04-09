@@ -31,7 +31,7 @@ void List::execute(std::shared_ptr<Client> client,
         response += "Channel UUID: " + std::string(c.uuid) +
                     ", Name: " + std::string(c.name) +
                     ", Desc: " + std::string(c.description) +
-                    ", Team UUID: "+ std::string(c.team_uuid) + "\n";
+                    ", Team UUID: " + std::string(c.team_uuid) + "\n";
       }
     }
   } else if (ctxType == Client::ContextType::CHANNEL) {

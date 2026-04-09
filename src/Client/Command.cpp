@@ -47,14 +47,14 @@ void HelpCommand::logCommand(const std::string &serverResponse) {
 }
 
 void LoginCommand::logCommand(const std::string &serverResponse) {
-    int status = getStatusCode(serverResponse);
-    std::cout << CLR_DEBUG << "LoginCommand:" << status << CLR_RESET << std::endl;
+  int status = getStatusCode(serverResponse);
+  std::cout << CLR_DEBUG << "LoginCommand:" << status << CLR_RESET << std::endl;
   if (status == 200) {
     std::vector<std::string> args = extractArgs(serverResponse);
     if (args.size() >= 2)
-        client_event_logged_in(args[6].c_str(), args[4].c_str());
+      client_event_logged_in(args[6].c_str(), args[4].c_str());
   } else if (status == 400) {
-        client_error_unauthorized();
+    client_error_unauthorized();
   }
 }
 
@@ -74,10 +74,12 @@ void UsersCommand::logCommand(const std::string &serverResponse) {
   if (status == 200) {
     std::vector<std::string> args = extractArgs(serverResponse);
     for (size_t i = 3; i + 5 < args.size(); i += 6) {
-        std::cout << CLR_DEBUG << "User UUID: [" << args[i + 1].c_str() << "], User Name: [" << args[i + 3].c_str() << "], IsConnected: [" <<  args[i + 5] << "]" << CLR_RESET << std::endl;
-      client_print_users(
-          args[i + 1].c_str(), args[i + 3].c_str(),
-          std::stoi(args[i + 5]));
+      std::cout << CLR_DEBUG << "User UUID: [" << args[i + 1].c_str()
+                << "], User Name: [" << args[i + 3].c_str()
+                << "], IsConnected: [" << args[i + 5] << "]" << CLR_RESET
+                << std::endl;
+      client_print_users(args[i + 1].c_str(), args[i + 3].c_str(),
+                         std::stoi(args[i + 5]));
     }
   }
 }
@@ -87,10 +89,12 @@ void UserCommand::logCommand(const std::string &serverResponse) {
   std::vector<std::string> args = extractArgs(serverResponse);
 
   if (status == 200 && args.size() >= 3) {
-    client_print_user(args[6].c_str(), args[4].c_str(),
-                      std::stoi(args[8]));
+    client_print_user(args[6].c_str(), args[4].c_str(), std::stoi(args[8]));
   } else if (status == 404 && args.size() >= 1) {
-    client_error_unknown_user(args[0].c_str()); /*Faut faire en sorte que le server renvois la commnande qu'on lui envoie quand ça fail pour que sa soit plus ismple*/
+    client_error_unknown_user(
+        args[0].c_str()); /*Faut faire en sorte que le server renvois la
+                             commnande qu'on lui envoie quand ça fail pour que
+                             sa soit plus ismple*/
   }
 }
 

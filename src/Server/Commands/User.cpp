@@ -25,17 +25,19 @@ void UserCommand::execute(std::shared_ptr<Client> client,
       bool isConnected = false;
 
       for (const auto &c : activeClients) {
-        if (c->isLoggedIn() && std::string(c->getActualUser().uuid) == targetUuid) {
+        if (c->isLoggedIn() &&
+            std::string(c->getActualUser().uuid) == targetUuid) {
           isConnected = true;
           break;
         }
       }
 
       client->sendMessage("200 User info: Name: " + std::string(user.name) +
-                          ", UUID: " + std::string(user.uuid) + 
+                          ", UUID: " + std::string(user.uuid) +
                           ", Status: " + (isConnected ? "1" : "0") + "\n");
-      
-      LOG_DEBUG("User info requested for UUID [" + targetUuid + "] - Status: " + std::to_string(isConnected));
+
+      LOG_DEBUG("User info requested for UUID [" + targetUuid +
+                "] - Status: " + std::to_string(isConnected));
       return;
     }
   }

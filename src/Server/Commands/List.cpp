@@ -39,7 +39,8 @@ void List::execute(std::shared_ptr<Client> client,
       if (std::string(th.channel_uuid) == client->getChannelUuid()) {
         response += "Thread UUID: " + std::string(th.uuid) +
                     ", Title: " + std::string(th.title) +
-                    ", Body: " + std::string(th.body) + "\n";
+                    ", Body: " + std::string(th.body) +
+                    ", Channel UUID: " + std::string(th.channel_uuid) + "\n";
       }
     }
   } else if (ctxType == Client::ContextType::THREAD) {

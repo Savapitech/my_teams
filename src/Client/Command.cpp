@@ -203,95 +203,100 @@ void SubscribedCommand::logCommand(const std::string &serverResponse) {
   }
 }
 
-/*
-// CONTEXT COMMAND
-*/
-
 void UseCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
 
-  if (status == 404 && !args.empty()) {
-    if (serverResponse.find("TEAM") != std::string::npos)
-      client_error_unknown_team(args[0].c_str());
-    else if (serverResponse.find("CHANNEL") != std::string::npos)
-      client_error_unknown_channel(args[0].c_str());
-    else if (serverResponse.find("THREAD") != std::string::npos)
-      client_error_unknown_thread(args[0].c_str());
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
+
+  if (status == 404 && args.size() >= 3) {
+    if (args[1] == "TEAM") {
+      client_error_unknown_team(args[2].c_str());
+    } else if (args[1] == "CHANNEL") {
+      client_error_unknown_channel(args[2].c_str());
+    } else if (args[1] == "THREAD") {
+      client_error_unknown_thread(args[2].c_str());
+    }
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
 void CreateCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
 
-  if (status == 201) {
-    if (serverResponse.find("TEAM") != std::string::npos && args.size() >= 3)
-      client_print_team_created(args[0].c_str(), args[1].c_str(),
-                                args[2].c_str());
-    else if (serverResponse.find("CHANNEL") != std::string::npos &&
-             args.size() >= 3)
-      client_print_channel_created(args[0].c_str(), args[1].c_str(),
-                                   args[2].c_str());
-    else if (serverResponse.find("THREAD") != std::string::npos &&
-             args.size() >= 5)
-      client_print_thread_created(args[0].c_str(), args[1].c_str(),
-                                  std::stoll(args[2]), args[3].c_str(),
-                                  args[4].c_str());
-    else if (serverResponse.find("REPLY") != std::string::npos &&
-             args.size() >= 4)
-      client_print_reply_created(args[0].c_str(), args[1].c_str(),
-                                 std::stoll(args[2]), args[3].c_str());
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
+
+  if (status == 201 && args.size() > 2) {
+    if (args[2] == "TEAM" && args.size() >= 6) {
+      client_print_team_created(args[3].c_str(), args[4].c_str(),
+                                args[5].c_str());
+    } else if (args[2] == "CHANNEL" && args.size() >= 6) {
+      client_print_channel_created(args[3].c_str(), args[4].c_str(),
+                                   args[5].c_str());
+    } else if (args[2] == "THREAD" && args.size() >= 8) {
+      client_print_thread_created(args[3].c_str(), args[4].c_str(),
+                                  std::stoll(args[5]), args[6].c_str(),
+                                  args[7].c_str());
+    } else if (args[2] == "REPLY" && args.size() >= 7) {
+      client_print_reply_created(args[3].c_str(), args[4].c_str(),
+                                 std::stoll(args[5]), args[6].c_str());
+    }
   } else if (status == 409) {
     client_error_already_exist();
   } else if (status == 401 || status == 403) {
     client_error_unauthorized();
   }
 }
-
 void ListCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
-  if (status == 200) {
-    if (serverResponse.find("TEAM") != std::string::npos) {
-      for (size_t i = 0; i + 2 < args.size(); i += 3)
+  if (status == 200 && args.size() > 2) {
+
+    if (args[2] == "TEAM") {
+      for (size_t i = 3; i + 2 < args.size(); i += 3) {
         client_print_teams(args[i].c_str(), args[i + 1].c_str(),
                            args[i + 2].c_str());
-    } else if (serverResponse.find("CHANNEL") != std::string::npos) {
-      for (size_t i = 0; i + 2 < args.size(); i += 3)
+      }
+    } else if (args[2] == "CHANNEL") {
+      for (size_t i = 3; i + 2 < args.size(); i += 3) {
         client_team_print_channels(args[i].c_str(), args[i + 1].c_str(),
                                    args[i + 2].c_str());
-    } else if (serverResponse.find("THREAD") != std::string::npos) {
-      for (size_t i = 0; i + 4 < args.size(); i += 5)
+      }
+    } else if (args[2] == "THREAD") {
+      for (size_t i = 3; i + 4 < args.size(); i += 5) {
         client_channel_print_threads(args[i].c_str(), args[i + 1].c_str(),
                                      std::stoll(args[i + 2]),
                                      args[i + 3].c_str(), args[i + 4].c_str());
-    } else if (serverResponse.find("REPLY") != std::string::npos) {
-      for (size_t i = 0; i + 3 < args.size(); i += 4)
+      }
+    } else if (args[2] == "REPLY") {
+      for (size_t i = 3; i + 3 < args.size(); i += 4) {
         client_thread_print_replies(args[i].c_str(), args[i + 1].c_str(),
                                     std::stoll(args[i + 2]),
                                     args[i + 3].c_str());
+      }
     }
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
 void InfoCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
-  if (status == 200) {
-    if (serverResponse.find("USER") != std::string::npos && args.size() >= 3)
-      client_print_user(args[0].c_str(), args[1].c_str(), std::stoi(args[2]));
-    else if (serverResponse.find("TEAM") != std::string::npos &&
-             args.size() >= 3)
-      client_print_team(args[0].c_str(), args[1].c_str(), args[2].c_str());
-    else if (serverResponse.find("CHANNEL") != std::string::npos &&
-             args.size() >= 3)
-      client_print_channel(args[0].c_str(), args[1].c_str(), args[2].c_str());
-    else if (serverResponse.find("THREAD") != std::string::npos &&
-             args.size() >= 5)
-      client_print_thread(args[0].c_str(), args[1].c_str(), std::stoll(args[2]),
-                          args[3].c_str(), args[4].c_str());
+  if (status == 200 && args.size() > 2) {
+    if (args[2] == "USER" && args.size() >= 6) {
+      client_print_user(args[3].c_str(), args[4].c_str(), std::stoi(args[5]));
+    } else if (args[2] == "TEAM" && args.size() >= 6) {
+      client_print_team(args[3].c_str(), args[4].c_str(), args[5].c_str());
+    } else if (args[2] == "CHANNEL" && args.size() >= 6) {
+      client_print_channel(args[3].c_str(), args[4].c_str(), args[5].c_str());
+    } else if (args[2] == "THREAD" && args.size() >= 8) {
+      client_print_thread(args[3].c_str(), args[4].c_str(), std::stoll(args[5]),
+                          args[6].c_str(), args[7].c_str());
+    }
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }

@@ -7,19 +7,19 @@ namespace commands {
 void Use::execute(std::shared_ptr<Client> client,
                   std::vector<std::string> &args) {
   if (!client->isLoggedIn()) {
-    client->sendMessage("401 Unauthorized: Please login first\n");
+    client->sendMessage("401 Unauthorized\n");
     return;
   }
 
   if (args.size() > 3) {
-    client->sendMessage("400 Bad request: too many args\n");
+    client->sendMessage("400 Bad request\n");
     return;
   }
 
   client->clearCtx();
 
   if (args.empty()) {
-    client->sendMessage("200 Context cleared\n");
+    client->sendMessage("200 OK\n");
     return;
   }
 
@@ -34,14 +34,14 @@ void Use::execute(std::shared_ptr<Client> client,
     }
   }
   if (!teamFound) {
-    client->sendMessage("404 Not Found: Unknown team UUID\n");
+    client->sendMessage("404 TEAM \"" + teamUuid + "\"\n");
     return;
   }
   client->setTeamUuid(teamUuid);
   client->setContextType(Client::ContextType::TEAM);
 
   if (args.size() == 1) {
-    client->sendMessage("200 Context updated\n");
+    client->sendMessage("200 OK\n");
     return;
   }
 
@@ -55,8 +55,7 @@ void Use::execute(std::shared_ptr<Client> client,
     }
   }
   if (!channelFound) {
-    client->sendMessage(
-        "404 Not Found: Unknown channel UUID (or not in this team)\n");
+    client->sendMessage("404 CHANNEL \"" + channelUuid + "\"\n");
     client->clearCtx();
     return;
   }
@@ -64,7 +63,7 @@ void Use::execute(std::shared_ptr<Client> client,
   client->setContextType(Client::ContextType::CHANNEL);
 
   if (args.size() == 2) {
-    client->sendMessage("200 Context updated\n");
+    client->sendMessage("200 OK\n");
     return;
   }
 
@@ -78,14 +77,13 @@ void Use::execute(std::shared_ptr<Client> client,
     }
   }
   if (!threadFound) {
-    client->sendMessage(
-        "404 Not Found: Unknown thread UUID (or not in this channel)\n");
+    client->sendMessage("404 THREAD \"" + threadUuid + "\"\n");
     client->clearCtx();
     return;
   }
   client->setThreadUuid(threadUuid);
   client->setContextType(Client::ContextType::THREAD);
 
-  client->sendMessage("200 Context updated\n");
+  client->sendMessage("200 OK\n");
 }
 } // namespace commands

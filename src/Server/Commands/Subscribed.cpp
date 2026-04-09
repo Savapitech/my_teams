@@ -19,34 +19,63 @@ void Subscribed::execute(std::shared_ptr<Client> client,
   auto const &teams = client->getServer().get().getDatabase().getTeams();
   auto const &users = client->getServer().get().getDatabase().getUsers();
 
-  std::string response = "200 Subscribed:\n";
-
   if (args.empty()) {
+    std::string response = "200 OK TEAM ";
     User const actualUser = client->getActualUser();
+
     for (const auto &sub : subscriptions) {
       if (std::string(sub.user_uuid) == std::string(actualUser.uuid)) {
         for (const auto &t : teams) {
           if (std::string(t.uuid) == std::string(sub.team_uuid)) {
-            response += "Team UUID: " + std::string(t.uuid) +
-                        ", Name: " + std::string(t.name) + "\n";
+            response += "\"" + std::string(t.uuid) + "\" \"" +
+                        std::string(t.name) + "\" \"" +
+                        std::string(t.description) + "\" ";
           }
         }
       }
     }
-  } else {
+    response += "\n";
+    client->sendMessage(response);
+  }
+
+  else {
     std::string const &team_uuid = args[0];
+    bool teamExists = false;
+    for (const auto &t : teams) {
+      if (std::string(t.uuid) == team_uuid) {
+        teamExists = true;
+        break;
+      }
+    }
+
+    if (!teamExists) {
+      client->sendMessage("404 \"" + team_uuid + "\"\n");
+      return;
+    }
+    std::string response = "200 OK USER ";
     for (const auto &sub : subscriptions) {
       if (std::string(sub.team_uuid) == team_uuid) {
         for (const auto &u : users) {
+          bool isConnected = false;
+
+          for (const auto &isActive : client->getServer().get().getClients()) {
+            if (isActive->isLoggedIn() &&
+                std::string(isActive->getActualUser().uuid) ==
+                    std::string(u.uuid)) {
+              isConnected = true;
+              break;
+            }
+          }
           if (std::string(u.uuid) == std::string(sub.user_uuid)) {
-            response += "User UUID: " + std::string(u.uuid) +
-                        ", Name: " + std::string(u.name) + "\n";
+            response += "\"" + std::string(u.uuid) + "\" \"" +
+                        std::string(u.name) + "\" \"" +
+                        (isConnected ? "1" : "0") + "\" ";
           }
         }
       }
     }
+    response += "\n";
+    client->sendMessage(response);
   }
-
-  client->sendMessage(response);
 }
 } // namespace commands

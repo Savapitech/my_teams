@@ -33,7 +33,7 @@ void Subscribe::execute(std::shared_ptr<Client> client,
   }
 
   if (!teamExists) {
-    client->sendMessage("404 Not Found: Team not found\n");
+    client->sendMessage("404 \"" + team_uuid + "\"\n");
     return;
   }
 
@@ -62,7 +62,7 @@ void Subscribe::execute(std::shared_ptr<Client> client,
   LOG_DEBUG("User " + std::string(actualUser.uuid) + " subscribed to team " +
             team_uuid);
 
-  client->sendMessage("200 Subscribed successfully to team " + team_uuid +
-                      "\n");
+  client->sendMessage("200 OK \"" + std::string(actualUser.uuid) + "\" \"" +
+                      team_uuid + "\"\n");
 }
 } // namespace commands

@@ -22,6 +22,19 @@ void Unsubscribe::execute(std::shared_ptr<Client> client,
   }
 
   std::string const &team_uuid = args[0];
+
+  auto &teams = client->getServer().get().getDatabase().getTeams();
+  bool teamExists = false;
+  for (const auto &t : teams) {
+    if (std::string(t.uuid) == team_uuid) {
+      teamExists = true;
+      break;
+    }
+  }
+  if (!teamExists) {
+    client->sendMessage("404 \"" + team_uuid + "\"\n");
+    return;
+  }
   User const actualUser = client->getActualUser();
   auto &subscriptions =
       client->getServer().get().getDatabase().getSubscriptions();
@@ -33,7 +46,7 @@ void Unsubscribe::execute(std::shared_ptr<Client> client,
       });
 
   if (it == subscriptions.end()) {
-    client->sendMessage("404 Not Found: Subscription not found\n");
+    client->sendMessage("400 Not subscribed\n");
     return;
   }
 
@@ -43,7 +56,7 @@ void Unsubscribe::execute(std::shared_ptr<Client> client,
   LOG_DEBUG("User " + std::string(actualUser.uuid) +
             " unsubscribed from team " + team_uuid);
 
-  client->sendMessage("200 Unsubscribed successfully from team " + team_uuid +
-                      "\n");
+  client->sendMessage("200 OK \"" + std::string(actualUser.uuid) + "\" \"" +
+                      team_uuid + "\"\n");
 }
 } // namespace commands

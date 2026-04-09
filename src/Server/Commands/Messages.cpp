@@ -20,11 +20,23 @@ void Messages::execute(std::shared_ptr<Client> client,
   }
 
   std::string const &targetUuid = args[0];
+  bool userExists = false;
+  for (const auto &user : client->getServer().get().getDatabase().getUsers()) {
+    if (std::string(user.uuid) == targetUuid) {
+      userExists = true;
+      break;
+    }
+  }
+
+  if (!userExists) {
+    client->sendMessage("404 \"" + targetUuid + "\"\n");
+    return;
+  }
+
   User const actualUser = client->getActualUser();
   auto const &messages = client->getServer().get().getDatabase().getMessages();
 
-  std::string response = "200 Messages:\n";
-  bool hasMessages = false;
+  std::string response = "200 OK ";
 
   for (const auto &msg : messages) {
     std::string s_uuid(msg.sender_uuid);
@@ -33,16 +45,13 @@ void Messages::execute(std::shared_ptr<Client> client,
 
     if ((s_uuid == a_uuid && r_uuid == targetUuid) ||
         (s_uuid == targetUuid && r_uuid == a_uuid)) {
-      hasMessages = true;
-      response += s_uuid + " -> " + r_uuid + " [" +
-                  std::to_string(msg.timestamp) +
-                  "]: " + std::string(msg.body) + "\n";
+
+      response += "\"" + s_uuid + "\" \"" + std::to_string(msg.timestamp) +
+                  "\" \"" + std::string(msg.body) + "\" ";
     }
   }
 
-  if (!hasMessages)
-    response += "No messages found.\n";
-
+  response += "\n";
   client->sendMessage(response);
 }
 } // namespace commands

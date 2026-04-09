@@ -31,6 +31,33 @@ std::vector<std::string> extractArgs(const std::string &response) {
 
   return args;
 }
+
+std::vector<std::string> extractComplexArgs(const std::string &response) {
+  std::vector<std::string> args;
+  bool inQuotes = false;
+  std::string currentArg = "";
+
+  for (size_t i = 0; i < response.length(); ++i) {
+    char c = response[i];
+
+    if (c == '"') {
+      inQuotes = !inQuotes;
+    } else if (c == ' ' && !inQuotes) {
+      if (!currentArg.empty()) {
+        args.push_back(currentArg);
+        currentArg = "";
+      }
+    } else if (c != '\n' && c != '\r') {
+      currentArg += c;
+    }
+  }
+  if (!currentArg.empty()) {
+    args.push_back(currentArg);
+  }
+
+  return args;
+}
+
 int getStatusCode(const std::string &response) {
   if (response.empty())
     return 0;
@@ -91,8 +118,7 @@ void UserCommand::logCommand(const std::string &serverResponse) {
   if (status == 200 && args.size() >= 3) {
     client_print_user(args[6].c_str(), args[4].c_str(), std::stoi(args[8]));
   } else if (status == 404 && args.size() >= 1) {
-    client_error_unknown_user(
-        args[4].c_str());
+    client_error_unknown_user(args[4].c_str());
   }
 }
 
@@ -100,80 +126,88 @@ void SendCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
   if (status == 404) {
     std::vector<std::string> args = extractArgs(serverResponse);
-    if (!args.empty())
-      client_error_unknown_user(
-          args[0].c_str()); // Il faut que le server renvoie une 400 quand ça
-                            // failed avec le uuid
+    client_error_unknown_user(args[1].c_str());
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
 void MessagesCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
   if (status == 200) {
-    for (size_t i = 0; i + 2 < args.size(); i += 3) {
+    for (size_t i = 2; i + 2 < args.size(); i += 3) {
       time_t timestamp = std::stoll(args[i + 1]);
-      client_private_message_print_messages(
-          args[i].c_str(), timestamp,
-          args[i + 2].c_str()); // On peux pas envoyé de message
+      client_private_message_print_messages(args[i].c_str(), timestamp,
+                                            args[i + 2].c_str());
     }
-  } else if (status == 404 && !args.empty()) {
-    client_error_unknown_user(args[0].c_str());
+  } else if (status == 404) {
+    if (args.size() >= 2) {
+      std::string uuidToPrint = args[1];
+      if (uuidToPrint.front() == '"' && uuidToPrint.back() == '"') {
+        uuidToPrint = uuidToPrint.substr(1, uuidToPrint.size() - 2);
+      }
+      client_error_unknown_user(uuidToPrint.c_str());
+    }
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
-void SubscribeCommand::logCommand(
-    const std::string &serverResponse) { // Faut que le server renvoit l'uuid
-                                         // que le client a essayé d'envoyer
+void SubscribeCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
-  if (status == 200 && args.size() >= 2) {
-    client_print_subscribed(args[0].c_str(), args[1].c_str());
-  } else if (status == 404 && !args.empty()) {
-    client_error_unknown_team(args[0].c_str());
+  if (status == 200 && args.size() >= 4)
+    client_print_subscribed(args[2].c_str(), args[3].c_str());
+  else if (status == 404 && args.size() >= 2)
+    client_error_unknown_team(args[1].c_str());
+  else if (status == 401)
+    client_error_unauthorized();
+}
+
+void UnsubscribeCommand::logCommand(const std::string &serverResponse) {
+  int status = getStatusCode(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
+
+  if (status == 200 && args.size() >= 4) {
+    client_print_unsubscribed(args[2].c_str(), args[3].c_str());
+  } else if (status == 404 && args.size() >= 2) {
+    client_error_unknown_team(args[1].c_str());
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
-void UnsubscribeCommand::logCommand(
-    const std::string
-        &serverResponse) { // Faut que le server renvoit l'uuid que le client a
-                           // essayé d'envoyer et le user si ça marche
+void SubscribedCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
-  if (status == 200 && args.size() >= 2) {
-    client_print_unsubscribed(args[0].c_str(), args[1].c_str());
-  } else if (status == 404 && !args.empty()) {
-    client_error_unknown_team(args[0].c_str());
-  }
-}
-
-void SubscribedCommand::logCommand(
-    const std::string
-        &serverResponse) { // Faut renvoyer les infos du teams ou des clients
-  int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
-
-  if (status == 200) {
-    if (serverResponse.find("TEAM") != std::string::npos) {
-      for (size_t i = 0; i + 2 < args.size(); i += 3) {
+  if (status == 200 && args.size() >= 3) {
+    if (args[2] == "TEAM") {
+      for (size_t i = 3; i + 2 < args.size(); i += 3) {
         client_print_teams(args[i].c_str(), args[i + 1].c_str(),
                            args[i + 2].c_str());
       }
-    } else if (serverResponse.find("USER") != std::string::npos) {
-      for (size_t i = 0; i + 2 < args.size(); i += 3) {
+    } else if (args[2] == "USER") {
+      for (size_t i = 3; i + 2 < args.size(); i += 3) {
         client_print_users(args[i].c_str(), args[i + 1].c_str(),
                            std::stoi(args[i + 2]));
       }
     }
-  } else if (status == 404 && !args.empty()) {
-    client_error_unknown_team(args[0].c_str());
+  } else if (status == 404 && args.size() >= 2) {
+    client_error_unknown_team(args[1].c_str());
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
-void UseCommand::logCommand(const std::string &serverResponse) { //
+/*
+// CONTEXT COMMAND
+*/
+
+void UseCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractArgs(serverResponse);
 

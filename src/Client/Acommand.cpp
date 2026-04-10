@@ -10,23 +10,44 @@
 
 void ACommand::sendCommand(const std::string &command, int fd,
                            std::queue<std::string> &_pendingCommands) {
-  size_t firstSpace = command.find(' ');
-  std::string cmdName = command.substr(0, firstSpace);
+  std::string cmd = command;
+  cmd.erase(std::remove(cmd.begin(), cmd.end(), '\n'), cmd.end());
+  cmd.erase(std::remove(cmd.begin(), cmd.end(), '\r'), cmd.end());
 
+  if (cmd.empty())
+    return;
+  size_t firstSpace = cmd.find(' ');
+  std::string cmdName = cmd.substr(0, firstSpace);
   std::transform(cmdName.begin(), cmdName.end(), cmdName.begin(), ::toupper);
   std::string commandToSend = cmdName.substr(1);
 
   if (firstSpace != std::string::npos) {
-    std::string argsPart = command.substr(firstSpace);
-    commandToSend += argsPart;
-  }
+    std::string argsPart = cmd.substr(firstSpace + 1);
+    std::vector<std::string> args;
+    std::string currentArg = "";
+    bool inQuotes = false;
 
-  int quoteCount = std::count(commandToSend.begin(), commandToSend.end(), '"');
-  if (quoteCount % 2 != 0) {
-    std::cout << "Error : missing quote." << std::endl;
-    return;
+    for (char c : argsPart) {
+      if (c == '"') {
+        inQuotes = !inQuotes;
+      } else if (c == ' ' && !inQuotes) {
+        if (!currentArg.empty()) {
+          args.push_back(currentArg);
+          currentArg = "";
+        }
+      } else {
+        currentArg += c;
+      }
+    }
+    if (!currentArg.empty()) {
+      args.push_back(currentArg);
+    }
+
+    for (const auto &arg : args) {
+      commandToSend += " \"" + arg + "\"";
+    }
   }
-  std::cout << "Send to the server: [" << commandToSend << "]" << std::endl;
-  _pendingCommands.push(cmdName.c_str() + 1);
+  commandToSend += "\n";
+  _pendingCommands.push(cmdName.substr(1));
   write(fd, commandToSend.c_str(), commandToSend.size());
 }

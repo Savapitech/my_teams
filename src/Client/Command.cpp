@@ -90,7 +90,7 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
   std::cout << CLR_DEBUG << "LogoutCommand" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
   if (status == 200) {
-    std::vector<std::string> args = extractArgs(serverResponse);
+    std::vector<std::string> args = extractComplexArgs(serverResponse);
     if (args.size() >= 2)
       client_event_logged_out(args[4].c_str(), args[3].c_str());
   }

@@ -22,10 +22,10 @@ void Logout::execute(std::shared_ptr<Client> client,
 
   User const &u = client->getActualUser();
   server_event_user_logged_out(u.uuid);
-  LOG_DEBUG("User " + std::string(u.name) + " is logged out, uuid " +
-            std::string(u.uuid));
-  client->sendMessage("200 Logged out " + std::string(u.name) + " " +
-                      std::string(u.uuid) + "\n");
+  LOG_DEBUG("User \"" + std::string(u.name) + "\" is logged out, uuid \"" +
+            std::string(u.uuid) + "\"");
+  client->sendMessage("200 Logged out \"" + std::string(u.name) + "\" \"" +
+                      std::string(u.uuid) + "\"\n");
 
   client->setLogged(false);
   client->clearCtx();

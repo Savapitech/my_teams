@@ -119,7 +119,7 @@ void UsersCommand::logCommand(const std::string &serverResponse) {
 
 void UserCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::vector<std::string> args = extractArgs(serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
 
   if (status == 200 && args.size() >= 3) {
     client_print_user(args[6].c_str(), args[4].c_str(), std::stoi(args[8]));

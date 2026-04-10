@@ -34,9 +34,10 @@ void UserCommand::execute(std::shared_ptr<Client> client,
         }
       }
 
-      client->sendMessage("200 User info: Name: " + std::string(user.name) +
-                          " ,UUID: " + std::string(user.uuid) +
-                          " ,Status: " + (isConnected ? "1" : "0") + "\n");
+      client->sendMessage("200 User info: Name: \"" + std::string(user.name) +
+                          "\" ,UUID: \"" + std::string(user.uuid) +
+                          "\" ,Status: \"" + (isConnected ? "1" : "0") +
+                          "\"\n");
 
       LOG_DEBUG("User info requested for UUID [" + targetUuid +
                 "] - Status: " + std::to_string(isConnected));

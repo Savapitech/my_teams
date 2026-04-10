@@ -131,7 +131,7 @@ void UserCommand::logCommand(const std::string &serverResponse) {
 void SendCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
   if (status == 404) {
-    std::vector<std::string> args = extractArgs(serverResponse);
+    std::vector<std::string> args = extractComplexArgs(serverResponse);
     client_error_unknown_user(args[1].c_str());
   } else if (status == 401) {
     client_error_unauthorized();

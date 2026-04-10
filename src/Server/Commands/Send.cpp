@@ -34,7 +34,7 @@ void Send::execute(std::shared_ptr<Client> client,
   }
 
   if (!userExists) {
-    std::string errorMsg = "404 " + args[0] + "\n";
+    std::string errorMsg = "404 \"" + args[0] + "\"\n";
     return client->sendMessage(errorMsg);
   }
   Message msg;

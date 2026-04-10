@@ -32,9 +32,9 @@ void Users::execute(std::shared_ptr<Client> client,
       }
     }
 
-    response += "UUID: " + std::string(user.uuid) +
-                " ,Name: " + std::string(user.name) +
-                " ,Status: " + (isConnected ? "1" : "0") + "\n";
+    response += "UUID: \"" + std::string(user.uuid) + "\" ,Name: \"" +
+                std::string(user.name) + "\" ,Status: \"" +
+                (isConnected ? "1" : "0") + "\"\n";
   }
 
   client->sendMessage(response);

@@ -93,15 +93,18 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
     if (args.size() >= 2)
       client_event_logged_out(args[4].c_str(), args[3].c_str());
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
 void UsersCommand::logCommand(const std::string &serverResponse) {
   std::cout << CLR_DEBUG << "Users Command" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
+
   if (status == 200) {
-    std::vector<std::string> args = extractArgs(serverResponse);
-    for (size_t i = 3; i + 5 < args.size(); i += 6) {
+    std::vector<std::string> args = extractComplexArgs(serverResponse);
+    for (size_t i = 2; i + 5 < args.size(); i += 5) {
       std::cout << CLR_DEBUG << "User UUID: [" << args[i + 1].c_str()
                 << "], User Name: [" << args[i + 3].c_str()
                 << "], IsConnected: [" << args[i + 5] << "]" << CLR_RESET
@@ -109,6 +112,8 @@ void UsersCommand::logCommand(const std::string &serverResponse) {
       client_print_users(args[i + 1].c_str(), args[i + 3].c_str(),
                          std::stoi(args[i + 5]));
     }
+  } else if (status == 401) {
+    client_error_unauthorized();
   }
 }
 
@@ -132,8 +137,6 @@ void SendCommand::logCommand(const std::string &serverResponse) {
     client_error_unauthorized();
   }
 }
-
-//
 
 void MessagesCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);

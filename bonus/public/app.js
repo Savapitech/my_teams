@@ -4,12 +4,13 @@ const input = document.getElementById('cmdInput');
 const sendBtn = document.getElementById('sendBtn');
 const username = sessionStorage.getItem('username');
 
+let userID = null;
 let tryingLogin = false;
 let teams = [];
 let currentTeamUUID = null;
 let currentChannelUUID = null;
 let currentThreadUUID = null;
-
+const messages = new Set();
 
 if (username) {
     showappscreen(username);
@@ -22,7 +23,7 @@ function showappscreen(username) {
     document.getElementById('appScreen').style.display = 'flex';
 }
 
-function showloginscreen(username) {
+function showloginscreen() {
     document.getElementById('appScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
 }
@@ -51,8 +52,24 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 
 function appendLog(text, type) {
     const div = document.createElement('div');
-    div.className = `msg ${type}`;
-    div.textContent = text;
+    const textMatch = text.match(/Reply from: (.*) \[(\d+)\]: (.+)$/);
+    if (textMatch) {
+      const uid = textMatch[1];
+      const timestamp = textMatch[2];
+      const message = textMatch[3];
+      const date = new Date(timestamp * 1000).toLocaleDateString("fr-FR", {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      if (uid == userID) {
+        div.className = "msg client";
+      } else {
+        div.className = "msg server";
+      }
+      div.textContent = `${date} \n ${message}`;
+    }
     log.appendChild(div);
     log.scrollTop = log.scrollHeight;
 }
@@ -61,6 +78,7 @@ ws.onopen = () => {
     appendLog('Connected to WebSocket proxy.', 'system');
     if (username) {
         ws.send(`LOGIN "${username}"`);
+        ws.send('INFO');
         ws.send ('LIST');
     }
 
@@ -123,9 +141,22 @@ ws.onmessage = (event) => {
       if (msgMatch) {
         displayThread({ uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3] });
       }
-    } 
+    }
+    
     console.log(data.message);
-    //appendLog(data.message, data.type);
+    if (data.message.startsWith('Reply from:')) {
+      if (messages.has(data.message)) return;
+      messages.add(data.message);
+      appendLog(data.message, data.type);
+    }
+
+    if (data.message.startsWith('Current User UUID:')) {
+      const msgMatch = data.message.match(/Current User UUID: (.*), Name: (.*)/);
+      if (msgMatch) {
+        userID = msgMatch[1];
+        console.log(userID);
+      }
+    }
 };
 
 ws.onclose = () => {
@@ -186,6 +217,7 @@ function displayThread(thread) {
       document.querySelectorAll('.thread').forEach(el => el.classList.remove('active'));
       div.classList.add('active');
       currentThreadUUID = thread.uuid;
+      messages.clear();
       ws.send(`USE "${currentTeamUUID}" "${currentChannelUUID}" "${thread.uuid}"`);
       ws.send('LIST');
     });
@@ -196,9 +228,9 @@ function displayThread(thread) {
 function sendCmd() {
     const cmd = input.value.trim();
     if (cmd) {
-        appendLog(cmd, 'client');
         ws.send(cmd);
         input.value = '';
+        ws.send("LIST");
     }
 }
 

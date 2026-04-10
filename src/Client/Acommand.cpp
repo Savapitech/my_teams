@@ -23,7 +23,7 @@ void ACommand::sendCommand(const std::string &command, int fd,
 
   int quoteCount = std::count(commandToSend.begin(), commandToSend.end(), '"');
   if (quoteCount % 2 != 0) {
-    std::cerr << "Error : missing quote." << std::endl;
+    std::cout << "Error : missing quote." << std::endl;
     return;
   }
   std::cout << "Send to the server: [" << commandToSend << "]" << std::endl;

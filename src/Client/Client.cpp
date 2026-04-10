@@ -56,7 +56,7 @@ void Client::handleCommand(const std::string &buffer, int fd) {
     return;
   }
   if (_pendingCommands.empty()) {
-    std::cerr << "Warning : no command in the queu." << std::endl;
+    std::cout << "Warning : no command in the queu." << std::endl;
     return;
   }
 
@@ -81,6 +81,9 @@ void Client::run() {
 
   while (true) {
     int ret = poll(fds, 2, -1);
+
+    if (ret == -1)
+      throw std::runtime_error("Error poll");
 
     if (fds[0].revents & POLLIN) {
       int retValue = 0;

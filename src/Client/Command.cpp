@@ -75,11 +75,12 @@ void HelpCommand::logCommand(const std::string &serverResponse) {
 
 void LoginCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);
-  std::cout << CLR_DEBUG << "LoginCommand:" << status << CLR_RESET << std::endl;
   if (status == 200) {
-    std::vector<std::string> args = extractArgs(serverResponse);
-    if (args.size() >= 2)
+    std::vector<std::string> args = extractComplexArgs(serverResponse);
+
+    if (args.size() >= 5) {
       client_event_logged_in(args[6].c_str(), args[4].c_str());
+    }
   } else if (status == 400) {
     client_error_unauthorized();
   }
@@ -131,6 +132,8 @@ void SendCommand::logCommand(const std::string &serverResponse) {
     client_error_unauthorized();
   }
 }
+
+//
 
 void MessagesCommand::logCommand(const std::string &serverResponse) {
   int status = getStatusCode(serverResponse);

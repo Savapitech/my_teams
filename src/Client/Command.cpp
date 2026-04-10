@@ -87,7 +87,6 @@ void LoginCommand::logCommand(const std::string &serverResponse) {
 }
 
 void LogoutCommand::logCommand(const std::string &serverResponse) {
-  std::cout << CLR_DEBUG << "LogoutCommand" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -99,16 +98,11 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UsersCommand::logCommand(const std::string &serverResponse) {
-  std::cout << CLR_DEBUG << "Users Command" << CLR_RESET << std::endl;
   int status = getStatusCode(serverResponse);
 
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
     for (size_t i = 2; i + 5 < args.size(); i += 5) {
-      std::cout << CLR_DEBUG << "User UUID: [" << args[i + 1].c_str()
-                << "], User Name: [" << args[i + 3].c_str()
-                << "], IsConnected: [" << args[i + 5] << "]" << CLR_RESET
-                << std::endl;
       client_print_users(args[i + 1].c_str(), args[i + 3].c_str(),
                          std::stoi(args[i + 5]));
     }

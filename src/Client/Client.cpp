@@ -52,7 +52,7 @@ Client::Client(const std::string &ip, const std::string &port)
 
 void Client::handleCommand(const std::string &buffer, int fd) {
   if (buffer.find("100") == 0) {
-    std::cout << "EVENT;" << buffer << std::endl;
+    std::cout << "EVENT" << buffer << std::endl;
     return;
   }
   if (_pendingCommands.empty()) {
@@ -63,8 +63,6 @@ void Client::handleCommand(const std::string &buffer, int fd) {
   std::string currentCmd = _pendingCommands.front();
   _pendingCommands.pop();
   currentCmd.erase(currentCmd.find_last_not_of("\r\n ") + 1);
-  std::cout << currentCmd << std::endl;
-
   auto it = _commandMap.find(currentCmd);
 
   if (it != _commandMap.end()) {
@@ -92,7 +90,6 @@ void Client::run() {
       if (retValue == -1)
         throw std::runtime_error("Error");
       buffer[retValue] = 0;
-      std::cout << buffer;
       cmdtest.sendCommand(buffer, this->_fd, this->_pendingCommands);
     }
     if (fds[1].revents & (POLLHUP | POLLERR | POLLNVAL)) {
@@ -105,7 +102,6 @@ void Client::run() {
       if (retValue == 0)
         throw std::runtime_error("Server disconnected");
       buffer[retValue] = 0;
-      std::cout << buffer;
       this->handleCommand(buffer, this->_fd);
     }
   }

@@ -52,7 +52,7 @@ Client::Client(const std::string &ip, const std::string &port)
 
 void Client::handleCommand(const std::string &buffer, int fd) {
   if (buffer.find("100") == 0) {
-    std::cout << "EVENT" << buffer << std::endl;
+    handleEvent(buffer);
     return;
   }
   if (_pendingCommands.empty()) {

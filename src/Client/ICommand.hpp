@@ -126,3 +126,5 @@ public:
   ~InfoCommand() = default;
   void logCommand(const std::string &serverResponse) override;
 };
+
+void handleEvent(const std::string &buffer);

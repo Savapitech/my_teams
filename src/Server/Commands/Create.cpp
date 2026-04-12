@@ -155,6 +155,29 @@ void Create::execute(std::shared_ptr<Client> client,
                         std::string(newReply.creator_uuid) + "\" \"" +
                         std::to_string(newReply.timestamp) + "\" \"" +
                         std::string(newReply.body) + "\"\n");
+    std::string teamUuid = client->getTeamUuid();
+    auto const &activeClients = client->getServer().get().getClients();
+    auto const &subscriptions = db.getSubscriptions();
+
+    auto isSubscribed = [&](const std::string &userUuid,
+                            const std::string &teamUuid) -> bool {
+      for (const auto &sub : subscriptions) {
+        if (std::string(sub.user_uuid) == userUuid &&
+            std::string(sub.team_uuid) == teamUuid) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    for (auto &c : activeClients) {
+      if (c->isLoggedIn() && isSubscribed(c->getActualUser().uuid, teamUuid)) {
+        c->sendMessage("100 thread_reply: \"" + teamUuid + "\" \"" +
+                       std::string(newReply.thread_uuid) + "\" \"" +
+                       std::string(newReply.creator_uuid) + "\" \"" +
+                       std::string(newReply.body) + "\"\n");
+      }
+    }
   } else {
     client->sendMessage("400 Bad context\n");
   }

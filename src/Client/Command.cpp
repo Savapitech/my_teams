@@ -1,3 +1,4 @@
+#include "Utils/Logger.hpp"
 #include <exception>
 #include <iostream>
 #include <sstream>
@@ -9,16 +10,6 @@
 extern "C" {
 #include "logging_client.h"
 }
-
-#define CLR_BOLD_INFO "\033[1;34m"
-#define CLR_BOLD_WARNING "\033[1;35m"
-#define CLR_BOLD_ERROR "\033[1;31m"
-#define CLR_BOLD_DEBUG "\033[1;32m"
-#define CLR_INFO "\033[0;34m"
-#define CLR_WARNING "\033[0;35m"
-#define CLR_ERROR "\033[0;31m"
-#define CLR_DEBUG "\033[0;32m"
-#define CLR_RESET "\033[0m"
 
 std::vector<std::string> extractArgs(const std::string &response) {
   std::vector<std::string> args;
@@ -74,19 +65,18 @@ void HelpCommand::logCommand(const std::string &serverResponse) {
 }
 
 void LoginCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
-
-    if (args.size() >= 5) {
-      client_event_logged_in(args[6].c_str(), args[4].c_str());
-    }
+    client_event_logged_in(args[6].c_str(), args[4].c_str());
   } else if (status == 400) {
     client_error_unauthorized();
   }
 }
 
 void LogoutCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -98,6 +88,7 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UsersCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   if (status == 200) {
@@ -112,6 +103,7 @@ void UsersCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UserCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -123,6 +115,7 @@ void UserCommand::logCommand(const std::string &serverResponse) {
 }
 
 void SendCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   if (status == 404) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -133,6 +126,7 @@ void SendCommand::logCommand(const std::string &serverResponse) {
 }
 
 void MessagesCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -156,6 +150,7 @@ void MessagesCommand::logCommand(const std::string &serverResponse) {
 }
 
 void SubscribeCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -168,6 +163,7 @@ void SubscribeCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UnsubscribeCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -181,6 +177,7 @@ void UnsubscribeCommand::logCommand(const std::string &serverResponse) {
 }
 
 void SubscribedCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -204,6 +201,7 @@ void SubscribedCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UseCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -222,6 +220,7 @@ void UseCommand::logCommand(const std::string &serverResponse) {
 }
 
 void CreateCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -248,6 +247,7 @@ void CreateCommand::logCommand(const std::string &serverResponse) {
   }
 }
 void ListCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -282,6 +282,7 @@ void ListCommand::logCommand(const std::string &serverResponse) {
 }
 
 void InfoCommand::logCommand(const std::string &serverResponse) {
+  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -298,5 +299,17 @@ void InfoCommand::logCommand(const std::string &serverResponse) {
     }
   } else if (status == 401) {
     client_error_unauthorized();
+  }
+}
+
+void handleEvent(const std::string &serverResponse) {
+  // LOG_DEBUG("EVENT:" + serverResponse);
+  std::vector<std::string> args = extractComplexArgs(serverResponse);
+  if (args[1] == "received:") {
+    client_event_private_message_received(args[2].c_str(), args[3].c_str());
+  }
+  if (args[1] == "thread_reply:") {
+    client_event_thread_reply_received(args[2].c_str(), args[3].c_str(),
+                                       args[4].c_str(), args[5].c_str());
   }
 }

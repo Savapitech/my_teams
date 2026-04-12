@@ -5,6 +5,7 @@ extern "C" {
 #include "Server/Client.hpp"
 #include "Server/Models.hpp"
 #include "Server/Server.hpp"
+#include "Utils/Logger.hpp"
 #include <cstring>
 #include <ctime>
 #include <string>
@@ -14,6 +15,8 @@ extern "C" {
 #else
 #include <uuid/uuid.h>
 #endif
+
+#include <iostream>
 
 namespace commands {
 void Send::execute(std::shared_ptr<Client> client,
@@ -58,5 +61,26 @@ void Send::execute(std::shared_ptr<Client> client,
   server_event_private_message_sended(msg.sender_uuid, msg.receiver_uuid,
                                       msg.body);
   client->sendMessage("200 Message sent\n");
+
+  std::string const &targetUuid = args[0];
+  std::cout << targetUuid << std::endl;
+  auto const &users = client->getServer().get().getDatabase().getUsers();
+  auto const &activeClients = client->getServer().get().getClients();
+
+  for (const auto &user : users) {
+    if (std::string(user.uuid) == targetUuid) {
+      for (auto &c : activeClients) {
+        if (c->isLoggedIn() &&
+            std::string(c->getActualUser().uuid) == targetUuid) {
+          c->sendMessage("100 received: \"" +
+                         std::string(c->getActualUser().uuid) + "\" \"" +
+                         msg.body + "\"\n");
+          LOG_DEBUG("User is connected");
+
+          break;
+        }
+      }
+    }
+  }
 }
 } // namespace commands

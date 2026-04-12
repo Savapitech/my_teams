@@ -56,8 +56,7 @@ void Login::execute(std::shared_ptr<Client> client,
 
   LOG_DEBUG("Created new user " + std::string(newUser.name) + " with uuid " +
             std::string(newUser.uuid));
-  client->sendMessage(
-      "201 User created and logged in: " + std::string(newUser.name) +
-      " uuid " + std::string(newUser.uuid) + "\n");
+  client->sendMessage("200 Logged in as " + std::string(newUser.name) +
+                      " uuid " + std::string(newUser.uuid) + "\n");
 }
 } // namespace commands

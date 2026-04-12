@@ -16,7 +16,7 @@ inline level_t &minLevel() {
 #ifdef DEBUG_MODE
   static level_t level = L_DEBUG;
 #else
-  static level_t level = L_DEBUG;
+  static level_t level = L_FATAL;
 #endif
   return level;
 }

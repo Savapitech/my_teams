@@ -93,6 +93,12 @@ launch_server: all
 launch_client: all
 	@ export $(LDLIB_PATH); ./$(NAME_client) 127.0.0.1 5290
 
+launch_server_debug: debug
+	@ export $(LDLIB_PATH); ./$(NAME_server) 5290
+
+launch_client_debug: debug
+	@ export $(LDLIB_PATH); ./$(NAME_client) 127.0.0.1 5290
+
 .NOTPARALLEL: re
 re:	fclean all
 

@@ -61,26 +61,39 @@ int getStatusCode(const std::string &response) {
 }
 
 void HelpCommand::logCommand(const std::string &serverResponse) {
-  std::cout << "How can i help you today ?\n";
+  std::cout << "Available commands:\n"
+            << "  /help\n"
+            << "  /login \"user_name\"\n"
+            << "  /logout\n"
+            << "  /users\n"
+            << "  /user \"user_uuid\"\n"
+            << "  /send \"user_uuid\" \"message_body\"\n"
+            << "  /messages \"user_uuid\"\n"
+            << "  /subscribe \"team_uuid\"\n"
+            << "  /subscribed [\"team_uuid\"]\n"
+            << "  /unsubscribe \"team_uuid\"\n"
+            << "  /use [\"team_uuid\"] [\"channel_uuid\"] [\"thread_uuid\"]\n"
+            << "  /create ...\n"
+            << "  /list\n"
+            << "  /info\n";
 }
 
 void LoginCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
-    client_event_logged_in(args[6].c_str(), args[4].c_str());
-  } else if (status == 400) {
+    if (args.size() >= 4)
+      client_event_logged_in(args[2].c_str(), args[3].c_str());
+  } else if (status == 400 || status == 401) {
     client_error_unauthorized();
   }
 }
 
 void LogoutCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
-    if (args.size() >= 2)
+    if (args.size() >= 5)
       client_event_logged_out(args[4].c_str(), args[3].c_str());
   } else if (status == 401) {
     client_error_unauthorized();
@@ -88,14 +101,16 @@ void LogoutCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UsersCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   if (status == 200) {
     std::vector<std::string> args = extractComplexArgs(serverResponse);
-    for (size_t i = 2; i + 5 < args.size(); i += 5) {
-      client_print_users(args[i + 1].c_str(), args[i + 3].c_str(),
-                         std::stoi(args[i + 5]));
+    for (size_t i = 2; i + 2 < args.size(); i += 3) {
+      try {
+        client_print_users(args[i].c_str(), args[i + 1].c_str(),
+                           std::stoi(args[i + 2]));
+      } catch (...) {
+      }
     }
   } else if (status == 401) {
     client_error_unauthorized();
@@ -103,46 +118,48 @@ void UsersCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UserCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
-  if (status == 200 && args.size() >= 3) {
-    client_print_user(args[6].c_str(), args[4].c_str(), std::stoi(args[8]));
-  } else if (status == 404 && args.size() >= 1) {
-    client_error_unknown_user(args[4].c_str());
-  }
-}
-
-void SendCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
-  int status = getStatusCode(serverResponse);
-  if (status == 404) {
-    std::vector<std::string> args = extractComplexArgs(serverResponse);
+  if (status == 200 && args.size() >= 4) {
+    try {
+      client_print_user(args[2].c_str(), args[3].c_str(), std::stoi(args[4]));
+    } catch (...) {
+    }
+  } else if (status == 404 && args.size() >= 2) {
     client_error_unknown_user(args[1].c_str());
   } else if (status == 401) {
     client_error_unauthorized();
   }
 }
 
+void SendCommand::logCommand(const std::string &serverResponse) {
+  int status = getStatusCode(serverResponse);
+  if (status == 404) {
+    std::vector<std::string> args = extractComplexArgs(serverResponse);
+    if (args.size() >= 2)
+      client_error_unknown_user(args[1].c_str());
+  } else if (status == 401) {
+    client_error_unauthorized();
+  }
+}
+
 void MessagesCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
   if (status == 200) {
     for (size_t i = 2; i + 2 < args.size(); i += 3) {
-      time_t timestamp = std::stoll(args[i + 1]);
-      client_private_message_print_messages(args[i].c_str(), timestamp,
-                                            args[i + 2].c_str());
+      try {
+        time_t timestamp = std::stoll(args[i + 1]);
+        client_private_message_print_messages(args[i].c_str(), timestamp,
+                                              args[i + 2].c_str());
+      } catch (...) {
+      }
     }
   } else if (status == 404) {
     if (args.size() >= 2) {
-      std::string uuidToPrint = args[1];
-      if (uuidToPrint.front() == '"' && uuidToPrint.back() == '"') {
-        uuidToPrint = uuidToPrint.substr(1, uuidToPrint.size() - 2);
-      }
-      client_error_unknown_user(uuidToPrint.c_str());
+      client_error_unknown_user(args[1].c_str());
     }
   } else if (status == 401) {
     client_error_unauthorized();
@@ -150,7 +167,6 @@ void MessagesCommand::logCommand(const std::string &serverResponse) {
 }
 
 void SubscribeCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -163,7 +179,6 @@ void SubscribeCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UnsubscribeCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -177,7 +192,6 @@ void UnsubscribeCommand::logCommand(const std::string &serverResponse) {
 }
 
 void SubscribedCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
@@ -189,8 +203,11 @@ void SubscribedCommand::logCommand(const std::string &serverResponse) {
       }
     } else if (args[2] == "USER") {
       for (size_t i = 3; i + 2 < args.size(); i += 3) {
-        client_print_users(args[i].c_str(), args[i + 1].c_str(),
-                           std::stoi(args[i + 2]));
+        try {
+          client_print_users(args[i].c_str(), args[i + 1].c_str(),
+                             std::stoi(args[i + 2]));
+        } catch (...) {
+        }
       }
     }
   } else if (status == 404 && args.size() >= 2) {
@@ -201,7 +218,6 @@ void SubscribedCommand::logCommand(const std::string &serverResponse) {
 }
 
 void UseCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -220,7 +236,6 @@ void UseCommand::logCommand(const std::string &serverResponse) {
 }
 
 void CreateCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
 
   std::vector<std::string> args = extractComplexArgs(serverResponse);
@@ -233,12 +248,18 @@ void CreateCommand::logCommand(const std::string &serverResponse) {
       client_print_channel_created(args[3].c_str(), args[4].c_str(),
                                    args[5].c_str());
     } else if (args[2] == "THREAD" && args.size() >= 8) {
-      client_print_thread_created(args[3].c_str(), args[4].c_str(),
-                                  std::stoll(args[5]), args[6].c_str(),
-                                  args[7].c_str());
+      try {
+        client_print_thread_created(args[3].c_str(), args[4].c_str(),
+                                    std::stoll(args[5]), args[6].c_str(),
+                                    args[7].c_str());
+      } catch (...) {
+      }
     } else if (args[2] == "REPLY" && args.size() >= 7) {
-      client_print_reply_created(args[3].c_str(), args[4].c_str(),
-                                 std::stoll(args[5]), args[6].c_str());
+      try {
+        client_print_reply_created(args[3].c_str(), args[4].c_str(),
+                                   std::stoll(args[5]), args[6].c_str());
+      } catch (...) {
+      }
     }
   } else if (status == 409) {
     client_error_already_exist();
@@ -246,13 +267,12 @@ void CreateCommand::logCommand(const std::string &serverResponse) {
     client_error_unauthorized();
   }
 }
+
 void ListCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
   if (status == 200 && args.size() > 2) {
-
     if (args[2] == "TEAM") {
       for (size_t i = 3; i + 2 < args.size(); i += 3) {
         client_print_teams(args[i].c_str(), args[i + 1].c_str(),
@@ -265,15 +285,21 @@ void ListCommand::logCommand(const std::string &serverResponse) {
       }
     } else if (args[2] == "THREAD") {
       for (size_t i = 3; i + 4 < args.size(); i += 5) {
-        client_channel_print_threads(args[i].c_str(), args[i + 1].c_str(),
-                                     std::stoll(args[i + 2]),
-                                     args[i + 3].c_str(), args[i + 4].c_str());
+        try {
+          client_channel_print_threads(
+              args[i].c_str(), args[i + 1].c_str(), std::stoll(args[i + 2]),
+              args[i + 3].c_str(), args[i + 4].c_str());
+        } catch (...) {
+        }
       }
     } else if (args[2] == "REPLY") {
       for (size_t i = 3; i + 3 < args.size(); i += 4) {
-        client_thread_print_replies(args[i].c_str(), args[i + 1].c_str(),
-                                    std::stoll(args[i + 2]),
-                                    args[i + 3].c_str());
+        try {
+          client_thread_print_replies(args[i].c_str(), args[i + 1].c_str(),
+                                      std::stoll(args[i + 2]),
+                                      args[i + 3].c_str());
+        } catch (...) {
+        }
       }
     }
   } else if (status == 401) {
@@ -282,20 +308,26 @@ void ListCommand::logCommand(const std::string &serverResponse) {
 }
 
 void InfoCommand::logCommand(const std::string &serverResponse) {
-  // LOG_DEBUG(serverResponse);
   int status = getStatusCode(serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
 
   if (status == 200 && args.size() > 2) {
     if (args[2] == "USER" && args.size() >= 6) {
-      client_print_user(args[3].c_str(), args[4].c_str(), std::stoi(args[5]));
+      try {
+        client_print_user(args[3].c_str(), args[4].c_str(), std::stoi(args[5]));
+      } catch (...) {
+      }
     } else if (args[2] == "TEAM" && args.size() >= 6) {
       client_print_team(args[3].c_str(), args[4].c_str(), args[5].c_str());
     } else if (args[2] == "CHANNEL" && args.size() >= 6) {
       client_print_channel(args[3].c_str(), args[4].c_str(), args[5].c_str());
     } else if (args[2] == "THREAD" && args.size() >= 8) {
-      client_print_thread(args[3].c_str(), args[4].c_str(), std::stoll(args[5]),
-                          args[6].c_str(), args[7].c_str());
+      try {
+        client_print_thread(args[3].c_str(), args[4].c_str(),
+                            std::stoll(args[5]), args[6].c_str(),
+                            args[7].c_str());
+      } catch (...) {
+      }
     }
   } else if (status == 401) {
     client_error_unauthorized();
@@ -303,13 +335,33 @@ void InfoCommand::logCommand(const std::string &serverResponse) {
 }
 
 void handleEvent(const std::string &serverResponse) {
-  // LOG_DEBUG("EVENT:" + serverResponse);
   std::vector<std::string> args = extractComplexArgs(serverResponse);
+  if (args.size() < 2)
+    return;
+
   if (args[1] == "received:") {
-    client_event_private_message_received(args[2].c_str(), args[3].c_str());
-  }
-  if (args[1] == "thread_reply:") {
-    client_event_thread_reply_received(args[2].c_str(), args[3].c_str(),
-                                       args[4].c_str(), args[5].c_str());
+    if (args.size() >= 4)
+      client_event_private_message_received(args[2].c_str(), args[3].c_str());
+  } else if (args[1] == "thread_reply:") {
+    if (args.size() >= 6)
+      client_event_thread_reply_received(args[2].c_str(), args[3].c_str(),
+                                         args[4].c_str(), args[5].c_str());
+  } else if (args[1] == "team_created:") {
+    if (args.size() >= 5)
+      client_event_team_created(args[2].c_str(), args[3].c_str(),
+                                args[4].c_str());
+  } else if (args[1] == "channel_created:") {
+    if (args.size() >= 5)
+      client_event_channel_created(args[2].c_str(), args[3].c_str(),
+                                   args[4].c_str());
+  } else if (args[1] == "thread_created:") {
+    if (args.size() >= 7) {
+      try {
+        client_event_thread_created(args[2].c_str(), args[3].c_str(),
+                                    std::stoll(args[4]), args[5].c_str(),
+                                    args[6].c_str());
+      } catch (...) {
+      }
+    }
   }
 }

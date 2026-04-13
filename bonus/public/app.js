@@ -50,13 +50,13 @@ function logout() {
 
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
-function appendLog(text, type) {
-    const div = document.createElement('div');
-    const textMatch = text.match(/Reply from: (.*) \[(\d+)\]: (.+)$/);
-    if (textMatch) {
-      const uid = textMatch[1];
-      const timestamp = textMatch[2];
-      const message = textMatch[3];
+function appendLog(text, type) { 
+    const values = [...text.matchAll(/"([^"]*)"/g)].map(m => m[1]);
+    while (values.length >= 4) {
+      const div = document.createElement('div');
+      const uid = values[1];
+      const timestamp = values[2];
+      const message = values[3];
       const date = new Date(timestamp * 1000).toLocaleDateString("fr-FR", {
         day: '2-digit',
         month: '2-digit',
@@ -69,9 +69,12 @@ function appendLog(text, type) {
         div.className = "msg server";
       }
       div.textContent = `${date} \n ${message}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      for(var x = 0; x < 4; x++)
+        values.shift();
+        
     }
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
 }
 
 ws.onopen = () => {
@@ -93,7 +96,7 @@ ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (tryingLogin) {
         tryingLogin = false;
-        if (data.message.startsWith('200')) {
+        if (data.message.startsWith('200 Logged in')) {
             const username = document.getElementById('usernameInput').value.trim();
             sessionStorage.setItem('username', username);
             showappscreen(username);
@@ -102,58 +105,73 @@ ws.onmessage = (event) => {
         }
         return;
     }
-    if (data.message.startsWith('Team UUID:')) {
-      const msgMatch = data.message.match(/Team UUID: (.*), Name: (.*), Desc: (.*)/);
-      if (msgMatch) {
+    if (data.message.startsWith('200 OK TEAM')) {
+      const values = [...data.message.matchAll(/"([^"]*)"/g)].map(m => m[1]);
+
+      while (values.length >= 3) {
         const team = {
-          uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3], channels: []
+        uuid: values[0],
+        name: values[1],
+        desc: values[2],
+        channels: []
         };
+
         let inside = false;
         for (var i = 0; i < teams.length; i++) {
           if (teams[i].uuid == team.uuid)
             inside = true;
         }
-        if (inside == false) {
+
+        if (!inside) {
           teams.push(team);
           displayTeams();
         }
+      for (var x = 0; x < 3; x++)
+        values.shift();
       }
     }
-    if (data.message.startsWith('Channel UUID:')) {
-      const msgMatch = data.message.match(/Channel UUID: (.*), Name: (.*), Desc: (.*), Team UUID: (.*)/);
-      if (msgMatch) {
+    if (data.message.startsWith('200 OK CHANNEL')) {
+      const values = [...data.message.matchAll(/"([^"]*)"/g)].map(m => m[1]);
+      const team = teams.find(t => t.uuid == currentTeamUUID);
+
+      while (values.length >= 3 && team) {
         const channel = {
-          uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3], threads: []
+          uuid: values[0],
+          name: values[1],
+          desc: values[2],
+          threads: []
         };
-        const teamID = msgMatch[4];
-        const team = teams.find(t => t.uuid == teamID);
-        if (team) {
-          const dup = team.channels.some(c => c.uuid == channel.uuid);
-          if (!dup) {
-            team.channels.push(channel);
-            displayTeams();
-          }
+
+        const dup = team.channels.some(c => c.uuid == channel.uuid);
+        if (!dup) {
+          team.channels.push(channel);
+          displayTeams();
         }
+
+        for (var x = 0; x < 3; x++)
+          values.shift();
       }
     }
-    if (data.message.startsWith('Thread UUID:')) {
-      const msgMatch = data.message.match(/Thread UUID: (.*), Title: (.*), Body: (.*), Channel UUID: (.*)/);
-      if (msgMatch) {
-        displayThread({ uuid: msgMatch[1], name: msgMatch[2], desc: msgMatch[3] });
+    if (data.message.startsWith('200 OK THREAD')) {
+      const values = [...data.message.matchAll(/"([^"]*)"/g)].map(m => m[1]); 
+      while (values.length >= 5) {
+        displayThread({uuid: values[0], name: values[3], desc:values[4]})
+        for (var x = 0; x < 5; x++)
+          values.shift();
       }
     }
     
     console.log(data.message);
-    if (data.message.startsWith('Reply from:')) {
+    if (data.message.startsWith('200 OK REPLY')) {
       if (messages.has(data.message)) return;
       messages.add(data.message);
       appendLog(data.message, data.type);
     }
 
-    if (data.message.startsWith('Current User UUID:')) {
-      const msgMatch = data.message.match(/Current User UUID: (.*), Name: (.*)/);
-      if (msgMatch) {
-        userID = msgMatch[1];
+    if (data.message.startsWith('200 OK USER')) {
+      const values = [...data.message.matchAll(/"([^"]*)"/g)].map(m => m[1]); 
+      if (values) {
+        userID = values[0];
         console.log(userID);
       }
     }
@@ -184,6 +202,7 @@ function displayTeams() {
         eldiv.addEventListener('click', (it) => {
           it.stopPropagation();
           currentChannelUUID = el.uuid;
+          currentTeamUUID = team.uuid;
           ws.send(`USE "${team.uuid}" "${el.uuid}"`);
           ws.send(`LIST`);
         document.getElementById('thread-header').textContent = " ~ " + el.name;
@@ -203,7 +222,7 @@ function displayTeams() {
 }
 
 function displayThread(thread) {
-  console.log(thread);
+  console.log("inside" + thread);
   const items = document.getElementById('thread-container');
     if (document.querySelector(`[data-thread-id="${thread.uuid}"]`)) return;
       const div = document.createElement('div');
@@ -228,6 +247,7 @@ function displayThread(thread) {
 function sendCmd() {
     const cmd = input.value.trim();
     if (cmd) {
+      console.log(currentTeamUUID, currentChannelUUID, currentThreadUUID);
         ws.send(cmd);
         input.value = '';
         ws.send("LIST");

@@ -1,6 +1,5 @@
-#include <stdexcept>
-
 #include <cstring>
+#include <stdexcept>
 
 #ifdef DARWIN_KERNEL
 #include <sys/syslimits.h>
@@ -30,6 +29,19 @@ void Create::execute(std::shared_ptr<Client> client,
 
   Client::ContextType ctxType = client->getContextType();
   auto &db = client->getServer().get().getDatabase();
+  auto const &activeClients = client->getServer().get().getClients();
+  auto const &subscriptions = db.getSubscriptions();
+
+  auto isSubscribed = [&](const std::string &userUuid,
+                          const std::string &teamUuid) -> bool {
+    for (const auto &sub : subscriptions) {
+      if (std::string(sub.user_uuid) == userUuid &&
+          std::string(sub.team_uuid) == teamUuid) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   if (ctxType == Client::ContextType::NONE) {
     if (args.size() != 2)
@@ -58,13 +70,30 @@ void Create::execute(std::shared_ptr<Client> client,
     client->sendMessage("201 CREATED TEAM \"" + std::string(newTeam.uuid) +
                         "\" \"" + std::string(newTeam.name) + "\" \"" +
                         std::string(newTeam.description) + "\"\n");
+
+    std::string broadcastMsg = "100 team_created: \"" +
+                               std::string(newTeam.uuid) + "\" \"" +
+                               std::string(newTeam.name) + "\" \"" +
+                               std::string(newTeam.description) + "\"\n";
+    for (auto &c : activeClients) {
+      if (c->isLoggedIn() && c.get() != client.get()) {
+        c->sendMessage(broadcastMsg);
+      }
+    }
+
   } else if (ctxType == Client::ContextType::TEAM) {
     if (args.size() != 2)
       return client->sendMessage("400 Bad request\n");
 
+    std::string const &teamUuid = client->getTeamUuid();
+
+    if (!isSubscribed(std::string(client->getActualUser().uuid), teamUuid)) {
+      return client->sendMessage("401 Unauthorized\n");
+    }
+
     auto &channels = db.getChannels();
     for (auto &channel : channels) {
-      if (std::string(channel.team_uuid) == client->getTeamUuid() &&
+      if (std::string(channel.team_uuid) == teamUuid &&
           std::string(channel.name) == args[0]) {
         return client->sendMessage("409 Conflict\n");
       }
@@ -74,8 +103,7 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newChannel.uuid);
-    std::strncpy(newChannel.team_uuid, client->getTeamUuid().c_str(),
-                 MAX_UUID_LENGTH - 1);
+    std::strncpy(newChannel.team_uuid, teamUuid.c_str(), MAX_UUID_LENGTH - 1);
     newChannel.team_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newChannel.name, args[0].c_str(), MAX_NAME_LENGTH - 1);
     newChannel.name[MAX_NAME_LENGTH - 1] = '\0';
@@ -86,17 +114,37 @@ void Create::execute(std::shared_ptr<Client> client,
     channels.push_back(newChannel);
     server_event_channel_created(newChannel.team_uuid, newChannel.uuid,
                                  newChannel.name);
+
     client->sendMessage("201 CREATED CHANNEL \"" +
                         std::string(newChannel.uuid) + "\" \"" +
                         std::string(newChannel.name) + "\" \"" +
                         std::string(newChannel.description) + "\"\n");
+
+    std::string broadcastMsg = "100 channel_created: \"" +
+                               std::string(newChannel.uuid) + "\" \"" +
+                               std::string(newChannel.name) + "\" \"" +
+                               std::string(newChannel.description) + "\"\n";
+    for (auto &c : activeClients) {
+      if (c->isLoggedIn() && c.get() != client.get() &&
+          isSubscribed(std::string(c->getActualUser().uuid), teamUuid)) {
+        c->sendMessage(broadcastMsg);
+      }
+    }
+
   } else if (ctxType == Client::ContextType::CHANNEL) {
     if (args.size() != 2)
       return client->sendMessage("400 Bad request\n");
 
+    std::string const &teamUuid = client->getTeamUuid();
+    std::string const &channelUuid = client->getChannelUuid();
+
+    if (!isSubscribed(std::string(client->getActualUser().uuid), teamUuid)) {
+      return client->sendMessage("401 Unauthorized\n");
+    }
+
     auto &threads = db.getThreads();
     for (auto &thread : threads) {
-      if (std::string(thread.channel_uuid) == client->getChannelUuid() &&
+      if (std::string(thread.channel_uuid) == channelUuid &&
           std::string(thread.title) == args[0]) {
         return client->sendMessage("409 Conflict\n");
       }
@@ -106,7 +154,7 @@ void Create::execute(std::shared_ptr<Client> client,
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newThread.uuid);
-    std::strncpy(newThread.channel_uuid, client->getChannelUuid().c_str(),
+    std::strncpy(newThread.channel_uuid, channelUuid.c_str(),
                  MAX_UUID_LENGTH - 1);
     newThread.channel_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newThread.creator_uuid, client->getActualUser().uuid,
@@ -128,16 +176,36 @@ void Create::execute(std::shared_ptr<Client> client,
                         "\" \"" + std::to_string(newThread.timestamp) +
                         "\" \"" + std::string(newThread.title) + "\" \"" +
                         std::string(newThread.body) + "\"\n");
+
+    std::string broadcastMsg = "100 thread_created: \"" +
+                               std::string(newThread.uuid) + "\" \"" +
+                               std::string(newThread.creator_uuid) + "\" \"" +
+                               std::to_string(newThread.timestamp) + "\" \"" +
+                               std::string(newThread.title) + "\" \"" +
+                               std::string(newThread.body) + "\"\n";
+    for (auto &c : activeClients) {
+      if (c->isLoggedIn() && c.get() != client.get() &&
+          isSubscribed(std::string(c->getActualUser().uuid), teamUuid)) {
+        c->sendMessage(broadcastMsg);
+      }
+    }
+
   } else if (ctxType == Client::ContextType::THREAD) {
     if (args.size() != 1)
       return client->sendMessage("400 Bad request\n");
+
+    std::string const &teamUuid = client->getTeamUuid();
+    std::string const &threadUuid = client->getThreadUuid();
+
+    if (!isSubscribed(std::string(client->getActualUser().uuid), teamUuid)) {
+      return client->sendMessage("401 Unauthorized\n");
+    }
 
     Reply newReply;
     uuid_t raw_uuid;
     uuid_generate(raw_uuid);
     uuid_unparse_lower(raw_uuid, newReply.uuid);
-    std::strncpy(newReply.thread_uuid, client->getThreadUuid().c_str(),
-                 MAX_UUID_LENGTH - 1);
+    std::strncpy(newReply.thread_uuid, threadUuid.c_str(), MAX_UUID_LENGTH - 1);
     newReply.thread_uuid[MAX_UUID_LENGTH - 1] = '\0';
     std::strncpy(newReply.creator_uuid, client->getActualUser().uuid,
                  MAX_UUID_LENGTH - 1);
@@ -155,29 +223,18 @@ void Create::execute(std::shared_ptr<Client> client,
                         std::string(newReply.creator_uuid) + "\" \"" +
                         std::to_string(newReply.timestamp) + "\" \"" +
                         std::string(newReply.body) + "\"\n");
-    std::string teamUuid = client->getTeamUuid();
-    auto const &activeClients = client->getServer().get().getClients();
-    auto const &subscriptions = db.getSubscriptions();
 
-    auto isSubscribed = [&](const std::string &userUuid,
-                            const std::string &teamUuid) -> bool {
-      for (const auto &sub : subscriptions) {
-        if (std::string(sub.user_uuid) == userUuid &&
-            std::string(sub.team_uuid) == teamUuid) {
-          return true;
-        }
-      }
-      return false;
-    };
-
+    std::string broadcastMsg = "100 thread_reply: \"" + teamUuid + "\" \"" +
+                               std::string(newReply.thread_uuid) + "\" \"" +
+                               std::string(newReply.creator_uuid) + "\" \"" +
+                               std::string(newReply.body) + "\"\n";
     for (auto &c : activeClients) {
-      if (c->isLoggedIn() && isSubscribed(c->getActualUser().uuid, teamUuid)) {
-        c->sendMessage("100 thread_reply: \"" + teamUuid + "\" \"" +
-                       std::string(newReply.thread_uuid) + "\" \"" +
-                       std::string(newReply.creator_uuid) + "\" \"" +
-                       std::string(newReply.body) + "\"\n");
+      if (c->isLoggedIn() && c.get() != client.get() &&
+          isSubscribed(std::string(c->getActualUser().uuid), teamUuid)) {
+        c->sendMessage(broadcastMsg);
       }
     }
+
   } else {
     client->sendMessage("400 Bad context\n");
   }

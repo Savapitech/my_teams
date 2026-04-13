@@ -16,8 +16,6 @@ extern "C" {
 #include <uuid/uuid.h>
 #endif
 
-#include <iostream>
-
 namespace commands {
 void Send::execute(std::shared_ptr<Client> client,
                    std::vector<std::string> &args) {
@@ -63,23 +61,14 @@ void Send::execute(std::shared_ptr<Client> client,
   client->sendMessage("200 Message sent\n");
 
   std::string const &targetUuid = args[0];
-  std::cout << targetUuid << std::endl;
-  auto const &users = client->getServer().get().getDatabase().getUsers();
   auto const &activeClients = client->getServer().get().getClients();
 
-  for (const auto &user : users) {
-    if (std::string(user.uuid) == targetUuid) {
-      for (auto &c : activeClients) {
-        if (c->isLoggedIn() &&
-            std::string(c->getActualUser().uuid) == targetUuid) {
-          c->sendMessage("100 received: \"" +
-                         std::string(c->getActualUser().uuid) + "\" \"" +
-                         msg.body + "\"\n");
-          LOG_DEBUG("User is connected");
-
-          break;
-        }
-      }
+  for (auto &c : activeClients) {
+    if (c->isLoggedIn() && std::string(c->getActualUser().uuid) == targetUuid) {
+      c->sendMessage("100 received: \"" + std::string(msg.sender_uuid) +
+                     "\" \"" + msg.body + "\"\n");
+      LOG_DEBUG("Private message delivered");
+      break;
     }
   }
 }

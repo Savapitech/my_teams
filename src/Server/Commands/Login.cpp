@@ -34,8 +34,8 @@ void Login::execute(std::shared_ptr<Client> client,
       server_event_user_logged_in(user.uuid);
       LOG_DEBUG("User " + std::string(user.name) + " is logged in, uuid " +
                 std::string(user.uuid));
-      client->sendMessage("200 Logged in as \"" + std::string(user.name) +
-                          "\" uuid \"" + std::string(user.uuid) + "\"\n");
+      client->sendMessage("200 OK \"" + std::string(user.uuid) + "\" \"" +
+                          std::string(user.name) + "\"\n");
       return;
     }
   }
@@ -56,7 +56,7 @@ void Login::execute(std::shared_ptr<Client> client,
 
   LOG_DEBUG("Created new user " + std::string(newUser.name) + " with uuid " +
             std::string(newUser.uuid));
-  client->sendMessage("200 Logged in as " + std::string(newUser.name) +
-                      " uuid " + std::string(newUser.uuid) + "\n");
+  client->sendMessage("200 OK \"" + std::string(newUser.uuid) + "\" \"" +
+                      std::string(newUser.name) + "\"\n");
 }
 } // namespace commands

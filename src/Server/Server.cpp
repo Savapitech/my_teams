@@ -126,11 +126,14 @@ void Server::disconnectClient(int fd) {
       [fd](const std::shared_ptr<Client> &c) { return c->getFd() == fd; });
 
   if (clientIt != this->_clients.end()) {
+    auto client = *clientIt;
     LOG_INFO(std::format("Client {} disconnected",
-                         inet_ntoa((*clientIt)->getAddr().sin_addr)));
+                         inet_ntoa(client->getAddr().sin_addr)));
+    if (client->isLoggedIn()) {
+      server_event_user_logged_out(client->getActualUser().uuid);
+      client->setLogged(false);
+    }
     this->_clients.erase(clientIt);
-    if ((*clientIt)->isLoggedIn())
-      server_event_user_logged_out((*clientIt)->getActualUser().uuid);
   }
 }
 

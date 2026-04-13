@@ -15,31 +15,40 @@ void Info::execute(std::shared_ptr<Client> client,
   }
 
   Client::ContextType ctxType = client->getContextType();
-  auto db = client->getServer().get().getDatabase();
+  auto &db = client->getServer().get().getDatabase();
 
   if (ctxType == Client::ContextType::NONE) {
     User const actualUser = client->getActualUser();
     client->sendMessage("200 OK USER \"" + std::string(actualUser.uuid) +
                         "\" \"" + std::string(actualUser.name) + "\" \"1\"\n");
   } else if (ctxType == Client::ContextType::TEAM) {
+    bool found = false;
     for (const auto &t : db.getTeams()) {
       if (std::string(t.uuid) == client->getTeamUuid()) {
         client->sendMessage("200 OK TEAM \"" + std::string(t.uuid) + "\" \"" +
                             std::string(t.name) + "\" \"" +
                             std::string(t.description) + "\"\n");
+        found = true;
         break;
       }
     }
+    if (!found)
+      client->sendMessage("404 \"" + client->getTeamUuid() + "\"\n");
   } else if (ctxType == Client::ContextType::CHANNEL) {
+    bool found = false;
     for (const auto &c : db.getChannels()) {
       if (std::string(c.uuid) == client->getChannelUuid()) {
         client->sendMessage("200 OK CHANNEL \"" + std::string(c.uuid) +
                             "\" \"" + std::string(c.name) + "\" \"" +
                             std::string(c.description) + "\"\n");
+        found = true;
         break;
       }
     }
+    if (!found)
+      client->sendMessage("404 \"" + client->getChannelUuid() + "\"\n");
   } else if (ctxType == Client::ContextType::THREAD) {
+    bool found = false;
     for (const auto &th : db.getThreads()) {
       if (std::string(th.uuid) == client->getThreadUuid()) {
         client->sendMessage("200 OK THREAD \"" + std::string(th.uuid) +
@@ -47,9 +56,12 @@ void Info::execute(std::shared_ptr<Client> client,
                             std::to_string(th.timestamp) + "\" \"" +
                             std::string(th.title) + "\" \"" +
                             std::string(th.body) + "\"\n");
+        found = true;
         break;
       }
     }
+    if (!found)
+      client->sendMessage("404 \"" + client->getThreadUuid() + "\"\n");
   }
 }
 } // namespace commands

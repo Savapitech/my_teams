@@ -15,7 +15,7 @@ void List::execute(std::shared_ptr<Client> client,
   }
 
   Client::ContextType ctxType = client->getContextType();
-  auto db = client->getServer().get().getDatabase();
+  auto &db = client->getServer().get().getDatabase();
 
   if (ctxType == Client::ContextType::NONE) {
     std::string response = "200 OK TEAM ";

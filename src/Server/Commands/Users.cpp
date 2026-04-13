@@ -18,7 +18,7 @@ void Users::execute(std::shared_ptr<Client> client,
   auto const &users = client->getServer().get().getDatabase().getUsers();
   auto const &activeClients = client->getServer().get().getClients();
 
-  std::string response = "200 Users list:\n";
+  std::string response = "200 OK";
 
   for (const auto &user : users) {
     bool isConnected = false;
@@ -32,11 +32,12 @@ void Users::execute(std::shared_ptr<Client> client,
       }
     }
 
-    response += "UUID: \"" + std::string(user.uuid) + "\" ,Name: \"" +
-                std::string(user.name) + "\" ,Status: \"" +
-                (isConnected ? "1" : "0") + "\"\n";
+    response += " \"" + std::string(user.uuid) + "\" \"" +
+                std::string(user.name) + "\" \"" + (isConnected ? "1" : "0") +
+                "\"";
   }
 
+  response += "\n";
   client->sendMessage(response);
   LOG_DEBUG("Users listed [" + std::to_string(users.size()) +
             "] users sent to client.");

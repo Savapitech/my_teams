@@ -59,10 +59,8 @@ int main(int argc, char **argv) {
     Server server(port);
     g_server = &server;
 
-    struct sigaction sa;
-    sa.sa_handler = handleSignal;
-    sigaction(SIGINT, &sa, nullptr);
-    sigaction(SIGTERM, &sa, nullptr);
+    signal(SIGINT, handleSignal);
+    signal(SIGTERM, handleSignal);
     initTerm();
 
     server.run();

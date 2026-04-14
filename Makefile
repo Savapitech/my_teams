@@ -20,10 +20,10 @@ LDLIBS := -L libs/myteams
 ifeq ($(shell uname -s),Darwin)
 LDLIBS += -lmyteams_macos
 CXXFLAGS += -D DARWIN_KERNEL
-LDLIB_PATH := 'DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:./libs'
+LDLIB_PATH := 'DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:./libs/myteams'
 else
 LDLIBS += -lmyteams -luuid
-LDLIB_PATH := 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs'
+LDLIB_PATH := 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/myteams'
 endif
 
 

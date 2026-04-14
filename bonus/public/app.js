@@ -172,7 +172,6 @@ ws.onmessage = (event) => {
       const values = [...data.message.matchAll(/"([^"]*)"/g)].map(m => m[1]); 
       if (values) {
         userID = values[0];
-        console.log(userID);
       }
     }
 };
@@ -185,7 +184,14 @@ ws.onclose = () => {
 function displayTeams() {
   const sidemenu = document.querySelector('.sidemenu');
    
-  sidemenu.innerHTML = '<h1>My Teams</h1>';
+  sidemenu.querySelectorAll('.team-container').forEach(el => el.remove());
+
+  if (!sidemenu.querySelector('.sidemenu-title')) {
+    const title = document.createElement('h1');
+    title.className = 'sidemenu-title';
+    title.textContent = 'My Teams';
+    sidemenu.insertBefore(title, sidemenu.querySelector('.create-bar'));
+  }
 
   teams.forEach(team => {
       const div = document.createElement('div');
@@ -207,6 +213,8 @@ function displayTeams() {
           ws.send(`LIST`);
         document.getElementById('thread-header').textContent = " ~ " + el.name;
         document.getElementById('thread-container').innerHTML = '';
+        createChannelBtn.disabled = false;
+        createThreadBtn.disabled = false;
         });
         channels.appendChild(eldiv);
       });
@@ -215,6 +223,8 @@ function displayTeams() {
           currentTeamUUID = team.uuid;
           ws.send(`USE "${team.uuid}"`);
           ws.send ('LIST');
+          createChannelBtn.disabled = false;
+          createThreadBtn.disabled = true;
       });
       div.appendChild(channels);
       sidemenu.appendChild(div);
@@ -247,8 +257,7 @@ function displayThread(thread) {
 function sendCmd() {
     const cmd = input.value.trim();
     if (cmd) {
-      console.log(currentTeamUUID, currentChannelUUID, currentThreadUUID);
-        ws.send(cmd);
+        ws.send(`CREATE "${cmd}"`);
         input.value = '';
         ws.send("LIST");
     }
@@ -260,3 +269,68 @@ input.addEventListener('keypress', (e) => {
 });
 
 input.focus();
+
+let createMode = null;
+
+const createTeamBtn = document.getElementById('create-team-btn');
+const createChannelBtn = document.getElementById('create-channel-btn');
+const createThreadBtn = document.getElementById('create-thread-btn');
+const createForm = document.getElementById('create-form');
+const createName = document.getElementById('create-name');
+const createDesc = document.getElementById('create-desc');
+const createConfirmBtn = document.getElementById('create-confirm-btn');
+const createCancelBtn  = document.getElementById('create-cancel-btn');
+
+function openCreateForm(mode) {
+  createMode = mode;
+  createName.placeholder = mode === 'thread' ? 'Thread title' : 'Name';
+  createDesc.style.display = mode === 'thread' ? 'none' : 'block';
+  createDesc.placeholder = mode === 'team' ? 'Team description' : 'Channel description';
+  createName.value = '';
+  createDesc.value = '';
+  createForm.style.display = 'block';
+  createName.focus();
+}
+
+createTeamBtn.addEventListener('click', () => openCreateForm('team'));
+createChannelBtn.addEventListener('click', () => openCreateForm('channel'));
+createThreadBtn.addEventListener('click', () => openCreateForm('thread'));
+createCancelBtn.addEventListener('click', () => { createForm.style.display = 'none'; createMode = null; });
+
+createConfirmBtn.addEventListener('click', () => {
+  const name = createName.value.trim();
+  const desc = createDesc.value.trim();
+  if (!name) return;
+
+  if (createMode === 'team') {
+    ws.send(`USE`);
+    ws.send(`CREATE "${name}" "${desc || name}"`);
+    setTimeout(() => {
+      ws.send('USE');
+      ws.send('LIST');
+    }, 300);
+
+  } else if (createMode === 'channel') {
+    console.log("channel " + currentTeamUUID);
+    if (!currentTeamUUID) return;
+    console.log(`log : USE "${currentTeamUUID}"`);
+    ws.send(`USE "${currentTeamUUID}"`);
+    ws.send(`SUBSCRIBE "${currentTeamUUID}"`);
+    console.log(`log : CREATE "${name}" "${desc}"`);
+    ws.send('INFO');
+    ws.send(`CREATE "${name}" "${desc}"`);
+
+  } else if (createMode === 'thread') {
+    console.log("thread " + currentTeamUUID + " " + currentChannelUUID);
+    if (!currentTeamUUID || !currentChannelUUID) return;
+    console.log(`USE "${currentTeamUUID}" "${currentChannelUUID}"`);
+    console.log(`CREATE "${name}"`);
+    ws.send(`USE "${currentTeamUUID}" "${currentChannelUUID}"`);
+    ws.send(`CREATE "${name}" "${name}"`);
+  }
+  ws.send('LIST');
+  createForm.style.display = 'none';
+  createMode = null;
+});
+
+createName.addEventListener('keypress', (e) => { if (e.key === 'Enter') createConfirmBtn.click(); });

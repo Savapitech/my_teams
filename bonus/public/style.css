@@ -46,6 +46,18 @@ body {
   font-size: 16px;
 }
 
+.thread-card .channel-card .team-card {
+    height: auto;
+    width: 400px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #252526;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+}
+
 .login-container h1,
 .login-container p {
     text-align: center;
@@ -81,8 +93,17 @@ body {
     flex-direction: column;
 }
 
-.sidemenu h1 {
+.sidemenu-header {
     border-bottom: 1px solid #444;
+    display: flex;
+}
+
+.sidemenu-header button {
+  height: 40px;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  margin-top: 20px;
 }
 
 #threadList {
@@ -94,11 +115,14 @@ body {
   flex-direction: column;
   overflow-y: auto;
 }
+
 #thread-header {
   padding: 14px 16px;
+  display: flex;
   font-size: 13px;
   font-weight: 600;
   color: #aaa;
+  flex-direction: row;
   border-bottom: 1px solid #333;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -224,3 +248,44 @@ button {
     font-weight: bold;
 }
 button:hover { background: #005f9e; }
+
+
+.create-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+}
+
+.create-bar button {
+  flex: 1;
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+.create-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.create-form {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-form input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 13px;
+}
+
+.create-form-row {
+  display: flex;
+  gap: 6px;
+}
+
+.create-form-row button {
+  flex: 1;
+  font-size: 12px;
+}

@@ -29,7 +29,21 @@
             </header>
 
             <div class = "row">
-                <div class ="sidemenu"></div>
+                <div class="sidemenu">
+                  <div class="create-bar">
+                    <button id="create-team-btn">+ Team</button>
+                    <button id="create-channel-btn" disabled>+ Channel</button>
+                    <button id="create-thread-btn" disabled>+ Thread</button>
+                  </div>
+                  <div class="create-form" id="create-form" style="display:none">
+                    <input type="text" id="create-name" placeholder="Name" autocomplete="off">
+                    <input type="text" id="create-desc" placeholder="Description (optional)" autocomplete="off">
+                    <div class="create-form-row">
+                      <button id="create-confirm-btn">Create</button>
+                      <button id="create-cancel-btn">Cancel</button>
+                    </div>
+                  </div>
+                </div>
 
                 <div id="threadList">
                   <div id="thread-header">Select a channel</div>
@@ -39,7 +53,7 @@
                     <div id="log" class="log-container"></div>
 
                     <div class="input-container">
-                        <input type="text" id="cmdInput" placeholder="ex: LOGIN &quot;user&quot; ou CREATE &quot;team&quot; &quot;desc&quot;..." autocomplete="off">
+                        <input type="text" id="cmdInput" placeholder="Type a message" autocomplete="off">
                         <button id="sendBtn">Send</button>
                     </div>
                 </div>

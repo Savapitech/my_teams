@@ -27,7 +27,17 @@ void Logout::execute(std::shared_ptr<Client> client,
   client->sendMessage("200 Logged out \"" + std::string(u.name) + "\" \"" +
                       std::string(u.uuid) + "\"\n");
 
+  auto const &activeClients = client->getServer().get().getClients();
+
+  std::string broadcastMsg =
+      "100 user_logged_out: \"" + std::string(client->getActualUser().uuid) +
+      "\" \"" + std::string(client->getActualUser().name) + "\"\n";
+
+  for (auto &c : activeClients)
+    if (c->isLoggedIn() && c.get() != client.get())
+      c->sendMessage(broadcastMsg);
   client->setLogged(false);
+
   client->clearCtx();
   client->disconnect();
 }

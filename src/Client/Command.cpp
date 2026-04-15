@@ -339,7 +339,13 @@ void handleEvent(const std::string &serverResponse) {
   if (args.size() < 2)
     return;
 
-  if (args[1] == "received:") {
+  if (args[1] == "user_logged_out:") {
+    if (args.size() >= 4)
+      client_event_logged_out(args[2].c_str(), args[3].c_str());
+  } else if (args[1] == "user_logged_in:") {
+    if (args.size() >= 4)
+      client_event_logged_in(args[2].c_str(), args[3].c_str());
+  } else if (args[1] == "received:") {
     if (args.size() >= 4)
       client_event_private_message_received(args[2].c_str(), args[3].c_str());
   } else if (args[1] == "thread_reply:") {

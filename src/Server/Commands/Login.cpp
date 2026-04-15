@@ -26,6 +26,7 @@ void Login::execute(std::shared_ptr<Client> client,
   }
 
   auto &users = client->getServer().get().getDatabase().getUsers();
+  auto const &activeClients = client->getServer().get().getClients();
 
   for (auto &user : users) {
     if (std::string(user.name) == args[0]) {
@@ -36,6 +37,14 @@ void Login::execute(std::shared_ptr<Client> client,
                 std::string(user.uuid));
       client->sendMessage("200 OK \"" + std::string(user.uuid) + "\" \"" +
                           std::string(user.name) + "\"\n");
+
+      std::string broadcastMsg =
+          "100 user_logged_in: \"" + std::string(client->getActualUser().uuid) +
+          "\" \"" + std::string(client->getActualUser().name) + "\"\n";
+
+      for (auto &c : activeClients)
+        if (c->isLoggedIn() && c.get() != client.get())
+          c->sendMessage(broadcastMsg);
       return;
     }
   }
@@ -58,5 +67,13 @@ void Login::execute(std::shared_ptr<Client> client,
             std::string(newUser.uuid));
   client->sendMessage("200 OK \"" + std::string(newUser.uuid) + "\" \"" +
                       std::string(newUser.name) + "\"\n");
+
+  std::string broadcastMsg =
+      "100 user_logged_in: \"" + std::string(client->getActualUser().uuid) +
+      "\" \"" + std::string(client->getActualUser().name) + "\"\n";
+
+  for (auto &c : activeClients)
+    if (c->isLoggedIn() && c.get() != client.get())
+      c->sendMessage(broadcastMsg);
 }
 } // namespace commands

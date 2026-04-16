@@ -1237,6 +1237,214 @@ def test_tricky():
     for cl in [a, b]:
         cl.close()
 
+def test_buffering():
+    section("BUFFERING & TCP FRAMING")
+
+    def raw_send(sock, data: bytes):
+        for byte in data:
+            sock.send(bytes([byte]))
+            time.sleep(0.003)
+
+    def sock_recv_all(sock, timeout=0.8) -> str:
+        sock.settimeout(timeout)
+        buf = ""
+        while True:
+            try:
+                chunk = sock.recv(4096).decode(errors="replace")
+                if not chunk:
+                    break
+                buf += chunk
+            except socket.timeout:
+                break
+        return buf
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("127.0.0.1", SERVER_PORT))
+    s.settimeout(RECV_TIMEOUT)
+    s.send(b'LOG')
+    time.sleep(0.05)
+    s.send(b'IN "buf')
+    time.sleep(0.05)
+    s.send(b'fer_user1"\n')
+    resp = sock_recv_all(s)
+    first = next((l.strip() for l in resp.splitlines() if l.strip() and not l.startswith("100 ")), "")
+    check("199. Fragmented LOGIN (3 chunks) -> 200", first, "200")
+    s.close()
+
+    s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s2.connect(("127.0.0.1", SERVER_PORT))
+    raw_send(s2, b'LOGIN "buf_slow_user"\n')
+    resp2 = sock_recv_all(s2)
+    first2 = next((l.strip() for l in resp2.splitlines() if l.strip() and not l.startswith("100 ")), "")
+    check("200. LOGIN sent byte by byte -> 200", first2, "200")
+    s2.close()
+
+    s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s3.connect(("127.0.0.1", SERVER_PORT))
+    s3.settimeout(RECV_TIMEOUT)
+    s3.sendall(b'LOGIN "buf_concat_user"\nUSERS\n')
+    resp3 = sock_recv_all(s3, timeout=1.0)
+    lines3 = [l.strip() for l in resp3.splitlines() if l.strip() and not l.startswith("100 ")]
+    if any(l.startswith("200") for l in lines3):
+        R.ok("201. Two commands concatenated in one send -> both processed")
+    else:
+        R.fail("201. Two commands concatenated in one send -> both processed", str(lines3), "200 present")
+    s3.close()
+
+    s4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s4.connect(("127.0.0.1", SERVER_PORT))
+    s4.settimeout(RECV_TIMEOUT)
+    s4.sendall(b'LOGIN "buf_pipe_user"\nUSERS\nLIST\n')
+    resp4 = sock_recv_all(s4, timeout=1.2)
+    codes4 = [l.strip()[:3] for l in resp4.splitlines() if l.strip() and not l.startswith("100 ") and l.strip()[:3].isdigit()]
+    if codes4.count("200") >= 2:
+        R.ok("202. Three pipelined commands -> at least two 200 responses")
+    else:
+        R.fail("202. Three pipelined commands -> at least two 200 responses", str(codes4), ">=2 '200'")
+    s4.close()
+
+    s5 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s5.connect(("127.0.0.1", SERVER_PORT))
+    s5.settimeout(RECV_TIMEOUT)
+    s5.sendall(b'LOGIN "buf_crlf_user"\r\n')
+    resp5 = sock_recv_all(s5)
+    first5 = next((l.strip() for l in resp5.splitlines() if l.strip() and not l.startswith("100 ")), "")
+    if first5.startswith("200") or first5.startswith("400"):
+        R.ok("203. CRLF line ending -> server responds without crash")
+    else:
+        R.fail("203. CRLF line ending -> server responds without crash", first5, "200 or 400")
+    s5.close()
+
+    c_big = new_client()
+    c_big.cmd('LOGIN "buf_big_sender"')
+    c_recv_big = new_client()
+    r_big = c_recv_big.cmd('LOGIN "buf_big_recv"')
+    big_recv_uuid = extract_quoted(r_big, 0)
+    big_body = "X" * 900
+    r_big_send = c_big.cmd(f'SEND "{big_recv_uuid}" "{big_body}"')
+    check("204. SEND with ~900 byte body -> 200", r_big_send, "200")
+    hist_big = c_big.cmd(f'MESSAGES "{big_recv_uuid}"')
+    check_contains("205. Large message stored and retrievable", hist_big, big_body[:50])
+    c_big.close()
+    c_recv_big.close()
+
+    crash = False
+    sockets = []
+    for i in range(8):
+        try:
+            sf = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sf.settimeout(1.0)
+            sf.connect(("127.0.0.1", SERVER_PORT))
+            sf.sendall(f'LOGIN "flood_{i}"\n'.encode())
+            sockets.append(sf)
+        except Exception:
+            crash = True
+            break
+    for sf in sockets:
+        sf.close()
+    if not crash:
+        R.ok("206. 8 rapid successive connections -> server still alive")
+    else:
+        R.fail("206. 8 rapid successive connections -> server still alive", "exception", "no crash")
+
+    s_hang = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_hang.connect(("127.0.0.1", SERVER_PORT))
+    s_hang.settimeout(RECV_TIMEOUT)
+    s_hang.send(b'LOGIN "buf_hang_user"')
+    time.sleep(0.1)
+
+    c_normal = new_client()
+    r_normal = c_normal.cmd('LOGIN "buf_normal_user"')
+    check("207. Incomplete command (no newline) does not block other clients -> 200", r_normal, "200")
+    s_hang.close()
+    c_normal.close()
+
+    s_junk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_junk.connect(("127.0.0.1", SERVER_PORT))
+    s_junk.settimeout(RECV_TIMEOUT)
+    s_junk.sendall(b'\x00\x01\x02garbage\n')
+    time.sleep(0.05)
+    s_junk.sendall(b'LOGIN "buf_junk_user"\n')
+    resp_junk = sock_recv_all(s_junk)
+    has_resp = any(l.strip()[:3].isdigit() for l in resp_junk.splitlines() if l.strip())
+    if has_resp:
+        R.ok("208. Garbage bytes before LOGIN -> server responds without crash")
+    else:
+        R.fail("208. Garbage bytes before LOGIN -> server responds", resp_junk[:80], "numeric response")
+    s_junk.close()
+
+    s_imm = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_imm.connect(("127.0.0.1", SERVER_PORT))
+    s_imm.settimeout(RECV_TIMEOUT)
+    s_imm.sendall(b'LOGIN "buf_imm_user"\nLOGOUT\n')
+    resp_imm = sock_recv_all(s_imm, timeout=1.0)
+    codes_imm = [l.strip()[:3] for l in resp_imm.splitlines()
+                 if l.strip() and not l.startswith("100 ") and l.strip()[:3].isdigit()]
+    if codes_imm.count("200") >= 2:
+        R.ok("209. Immediate LOGIN + LOGOUT in one send -> two 200 responses")
+    else:
+        R.fail("209. Immediate LOGIN + LOGOUT in one send -> two 200 responses", str(codes_imm), "two '200'")
+    s_imm.close()
+
+    c_rob = new_client()
+    c_rob.cmd('LOGIN "buf_robust_user"')
+    c_rob.cmd('FOOBAR "garbage"')
+    r_rob = c_rob.cmd('USERS')
+    check("210. Valid command after unknown command -> 200", r_rob, "200")
+    c_rob.close()
+
+    s_long = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_long.connect(("127.0.0.1", SERVER_PORT))
+    s_long.settimeout(RECV_TIMEOUT)
+    s_long.sendall(b'A' * 8192)
+    time.sleep(0.1)
+    s_long.close()
+
+    c_after = new_client()
+    r_after = c_after.cmd('LOGIN "buf_afterlong_user"')
+    check("211. 8KB line without newline then close -> server still alive", r_after, "200")
+    c_after.close()
+
+    s_split = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_split.connect(("127.0.0.1", SERVER_PORT))
+    s_split.settimeout(RECV_TIMEOUT)
+    payload = b'LOGIN "buf_split_user"\n'
+    mid = len(payload) // 2
+    s_split.send(payload[:mid])
+    time.sleep(0.2)
+    s_split.send(payload[mid:])
+    resp_split = sock_recv_all(s_split)
+    first_split = next((l.strip() for l in resp_split.splitlines() if l.strip() and not l.startswith("100 ")), "")
+    check("212. Command split exactly at midpoint -> 200", first_split, "200")
+    s_split.close()
+
+    s_multi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_multi.connect(("127.0.0.1", SERVER_PORT))
+    s_multi.settimeout(RECV_TIMEOUT)
+    s_multi.sendall(b'LOGIN "buf_multi_user"\n')
+    time.sleep(0.05)
+    resp_login = sock_recv_all(s_multi, timeout=0.4)
+    multi_uuid = extract_quoted(next((l.strip() for l in resp_login.splitlines() if l.strip().startswith("200")), ""), 0)
+
+    helper_multi = new_client()
+    helper_multi.cmd('LOGIN "buf_multi_helper"')
+    helper_r = helper_multi.cmd('LOGIN "buf_multi_helper"')
+    helper_uuid = extract_quoted(helper_r, 0)
+    helper_multi.close()
+
+    if helper_uuid:
+        for i in range(5):
+            s_multi.sendall(f'SEND "{helper_uuid}" "burst {i}"\n'.encode())
+        time.sleep(0.3)
+        resp_multi = sock_recv_all(s_multi, timeout=0.8)
+        codes_multi = [l.strip()[:3] for l in resp_multi.splitlines()
+                       if l.strip() and not l.startswith("100 ") and l.strip()[:3].isdigit()]
+        if codes_multi.count("200") >= 5:
+            R.ok("213. 5 SEND commands in burst -> all 5 processed")
+        else:
+            R.fail("213. 5 SEND commands in burst -> all 5 processed", str(codes_multi), "five '200'")
+    s_multi.close()
+
 def main():
     global SERVER_PORT, server
 
@@ -1279,6 +1487,7 @@ def main():
         test_edge_cases()
         test_cli_integration()
         test_tricky()
+        test_buffering()
     except KeyboardInterrupt:
         print(f"\n{YELLOW}Tests interrupted{RESET}")
     except Exception as e:

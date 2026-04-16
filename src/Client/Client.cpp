@@ -50,7 +50,10 @@ Client::Client(const std::string &ip, const std::string &port)
   _commandMap["INFO"] = std::make_unique<InfoCommand>();
 }
 
+#include "../Utils/Logger.hpp"
+
 void Client::handleCommand(const std::string &buffer, int fd) {
+  LOG_DEBUG("server response:" + buffer);
   if (buffer.find("100") == 0) {
     handleEvent(buffer);
     return;
@@ -76,22 +79,54 @@ void Client::handleCommand(const std::string &buffer, int fd) {
 void Client::run() {
   CommandTest cmdtest;
   std::string line;
+  std::string serverLine;
+  std::vector<std::string> cmds;
+  bool stdinClosed = false;
 
   while (true) {
     int ret = poll(fds, 2, -1);
 
     if (ret == -1)
       throw std::runtime_error("Error poll");
-
-    if (fds[0].revents & POLLIN) {
+    if (ret == 0 && stdinClosed) {
+      if (!serverLine.empty()) {
+        this->handleCommand(serverLine, this->_fd);
+      }
+      break;
+    }
+    if (fds[0].fd != -1 && (fds[0].revents & (POLLIN | POLLHUP | POLLERR))) {
       int retValue = 0;
       char buffer[1024];
       retValue = read(0, buffer, 1024);
+
       if (retValue == -1)
         throw std::runtime_error("Error");
-      buffer[retValue] = 0;
-      cmdtest.sendCommand(buffer, this->_fd, this->_pendingCommands);
+
+      if (retValue == 0) {
+        fds[0].fd = -1;
+        stdinClosed = true;
+      } else {
+        buffer[retValue] = 0;
+
+        for (int i = 0; i < retValue; i++) {
+          line += buffer[i];
+          if (buffer[i] == '\n') {
+            cmds.push_back(line);
+            line.clear();
+          }
+        }
+        auto it = cmds.begin();
+        while (it != cmds.end()) {
+          if (it->find('\n') != std::string::npos) {
+            cmdtest.sendCommand(*it, this->_fd, this->_pendingCommands);
+            it = cmds.erase(it);
+          } else {
+            ++it;
+          }
+        }
+      }
     }
+
     if (fds[1].revents & (POLLHUP | POLLERR | POLLNVAL)) {
       throw std::runtime_error("Server disconect");
     }
@@ -99,10 +134,17 @@ void Client::run() {
       int retValue = 0;
       char buffer[1024];
       retValue = read(this->_fd, buffer, 1024);
-      if (retValue == 0)
+
+      if (retValue <= 0)
         throw std::runtime_error("Server disconnected");
-      buffer[retValue] = 0;
-      this->handleCommand(buffer, this->_fd);
+
+      for (int i = 0; i < retValue; i++) {
+        serverLine += buffer[i];
+        if (buffer[i] == '\n') {
+          this->handleCommand(serverLine, this->_fd);
+          serverLine.clear();
+        }
+      }
     }
   }
 }

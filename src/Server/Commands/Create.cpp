@@ -229,7 +229,7 @@ void Create::execute(std::shared_ptr<Client> client,
                                std::string(newReply.creator_uuid) + "\" \"" +
                                std::string(newReply.body) + "\"\n";
     for (auto &c : activeClients) {
-      if (c->isLoggedIn() && c.get() != client.get() &&
+      if (c->isLoggedIn() &&
           isSubscribed(std::string(c->getActualUser().uuid), teamUuid)) {
         c->sendMessage(broadcastMsg);
       }

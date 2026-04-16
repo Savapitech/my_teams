@@ -31,6 +31,7 @@ function showloginscreen() {
 
 function Login() {
     const username = document.getElementById('usernameInput').value.trim();
+    console.log(username);
     if (!username) 
         return;
     tryingLogin = true;
@@ -79,6 +80,7 @@ function appendLog(text, type) {
 
 ws.onopen = () => {
     appendLog('Connected to WebSocket proxy.', 'system');
+  console.log(username);
     if (username) {
         ws.send(`LOGIN "${username}"`);
         ws.send('INFO');
@@ -94,14 +96,15 @@ setInterval(() => {
 
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    console.log(username);
     if (tryingLogin) {
         tryingLogin = false;
-        if (data.message.startsWith('200 Logged in')) {
+        if (data.message.startsWith('200')) {
             const username = document.getElementById('usernameInput').value.trim();
             sessionStorage.setItem('username', username);
             showappscreen(username);
         } else {
-            document.getElementById('login-error').style.display = 'block';
+            //document.getElementById('login-error').style.display = 'block';
         }
         return;
     }
